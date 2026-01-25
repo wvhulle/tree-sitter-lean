@@ -1,5 +1,21 @@
 fn main() {
     let src_dir = std::path::Path::new("src");
+    let parser_path = src_dir.join("parser.c");
+
+    // Generate parser.c if missing (requires tree-sitter CLI)
+    if !parser_path.exists() {
+        println!("cargo:warning=parser.c not found, running tree-sitter generate...");
+        let status = std::process::Command::new("tree-sitter")
+            .arg("generate")
+            .status()
+            .expect("Failed to run tree-sitter generate. Is tree-sitter CLI installed?");
+        if !status.success() {
+            panic!("tree-sitter generate failed with status: {}", status);
+        }
+    }
+
+    // Also regenerate if grammar.js is newer than parser.c
+    println!("cargo:rerun-if-changed=grammar.js");
 
     let mut c_config = cc::Build::new();
     c_config.include(&src_dir);
@@ -7,7 +23,6 @@ fn main() {
         .flag_if_supported("-Wno-unused-parameter")
         .flag_if_supported("-Wno-unused-but-set-variable")
         .flag_if_supported("-Wno-trigraphs");
-    let parser_path = src_dir.join("parser.c");
     c_config.file(&parser_path);
 
     // External scanner written in C
