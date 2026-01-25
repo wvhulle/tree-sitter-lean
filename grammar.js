@@ -5,7 +5,7 @@ const do_ = require('./grammar/do.js')
 const syntax = require('./grammar/syntax.js')
 const tactic = require('./grammar/tactic.js')
 const term = require('./grammar/term.js')
-const {sep1} = require('./grammar/util.js')
+const { sep1 } = require('./grammar/util.js')
 
 const PREC = {
   dollar: -5,
@@ -55,8 +55,17 @@ module.exports = grammar({
     [$.instance_binder, $._term],
     [$.instance_binder, $.list],
     [$.proj, $._expression],
+    // Tactic-level have/let conflict with term-level have/let
+    [$._tactic_let_id_decl, $._have_id_lhs, $._term],
+    [$._tactic_let_id_decl, $._let_id_lhs, $._term],
+    [$._tactic_let_id_decl, $.let],
+    [$._tactic_let_id_decl, $._type_spec],
+    [$._tactic_let_pat_decl, $._term],
+    [$._tactic_let_decl, $._type_spec],
     [$.have_tactic, $._have_id_lhs, $._term],
+    [$.have_tactic, $.have],
     [$.let_tactic, $._let_id_lhs, $._term],
+    [$.let_tactic, $.let],
   ],
 
   word: $ => $._identifier,
@@ -155,7 +164,7 @@ module.exports = grammar({
       choice(
         seq($.catch, optional($.finally)),
         $.finally,
-    ))),
+      ))),
 
     catch: $ => prec.left(seq(
       'catch',
@@ -268,7 +277,7 @@ module.exports = grammar({
     )),
 
     _identifier: $ => /[_a-zA-ZͰ-ϿĀ-ſ\U0001D400-\U0001D7FF][_`'`a-zA-Z0-9Ͱ-ϿĀ-ſ∇!?\u2070-\u209F\U0001D400-\U0001D7FF]*/,
-    _escaped_identifier: $ =>  /«[^»]*»/,
+    _escaped_identifier: $ => /«[^»]*»/,
 
     ...attr,
     ...command,

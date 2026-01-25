@@ -222,3 +222,221 @@ example {x : Nat} : x = x := by refine Eq.refl ?_
           (identifier)
           (identifier)
           (synthetic_hole (hole)))))))
+
+===========================
+Have Tactic With Name
+===========================
+
+example : True := by
+  have h : 1 = 1 := rfl
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (have_tactic
+          name: (identifier)
+          type: (binary_expression (number) (number))
+          value: (identifier))
+        (trivial)))))
+
+===========================
+Have Tactic Anonymous
+===========================
+
+example : True := by
+  have : 1 = 1 := rfl
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (have_tactic
+          type: (binary_expression (number) (number))
+          value: (identifier))
+        (trivial)))))
+
+===========================
+Have Tactic With By Proof
+===========================
+
+example : True := by
+  have h : 1 = 1 := by rfl
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (have_tactic
+          name: (identifier)
+          type: (binary_expression (number) (number))
+          value: (tactics (rfl)))
+        (trivial)))))
+
+===========================
+Have Tactic Inferred Type
+===========================
+
+example : True := by
+  have h := rfl
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (have_tactic
+          name: (identifier)
+          value: (identifier))
+        (trivial)))))
+
+===============================
+Have Tactic Anonymous Inferred
+===============================
+
+example : True := by
+  have := rfl
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (have_tactic
+          value: (identifier))
+        (trivial)))))
+
+=======
+Obtain
+=======
+
+example : True := by
+  obtain ⟨x, y⟩ := foo
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (obtain
+          pattern: (anonymous_constructor (identifier) (identifier))
+          value: (identifier))
+        (trivial)))))
+
+=========
+Suffices
+=========
+
+example : True := by
+  suffices 1 = 1 by rfl
+  rfl
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (suffices
+          type: (binary_expression (number) (number))
+          proof: (identifier))
+        (rfl)))))
+
+======================
+Suffices Without Proof
+======================
+
+example : True := by
+  suffices 1 = 1
+  trivial
+
+---
+
+(module
+  (declaration
+    (example
+      type: (true)
+      body: (tactics
+        (suffices
+          type: (binary_expression (number) (number)))
+        (trivial)))))
+
+=====
+Grind
+=====
+
+example : 1 = 1 := by grind
+
+---
+
+(module
+  (declaration
+    (example
+      type: (binary_expression (number) (number))
+      body: (tactics (grind)))))
+
+==================
+Grind With Lemmas
+==================
+
+example : 1 = 1 := by grind [foo, bar]
+
+---
+
+(module
+  (declaration
+    (example
+      type: (binary_expression (number) (number))
+      body: (tactics
+        (grind
+          extra: (list (identifier) (identifier)))))))
+
+======
+Decide
+======
+
+example : 1 = 1 := by decide
+
+---
+
+(module
+  (declaration
+    (example
+      type: (binary_expression (number) (number))
+      body: (tactics (decide)))))
+
+=====
+Omega
+=====
+
+example : 1 < 2 := by omega
+
+---
+
+(module
+  (declaration
+    (example
+      type: (comparison (number) (number))
+      body: (tactics (omega)))))
