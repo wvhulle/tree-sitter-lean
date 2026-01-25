@@ -33,6 +33,9 @@
         packages = {
           default = grammar;
           grammar = grammar;
+
+          # Rust crate source with generated parser.c
+          # Structured for crane's vendorCargoDeps overrideVendorGitCheckout
           rust-crate = pkgs.stdenv.mkDerivation {
             pname = "tree-sitter-lean-crate";
             version = "0.0.1";
@@ -46,8 +49,14 @@
             buildPhase = "tree-sitter generate";
 
             installPhase = ''
-              cp -r . $out
-              rm -rf $out/.git
+              # Create directory structure expected by cargo vendoring:
+              # <name>-<version>/
+              mkdir -p $out/tree-sitter-lean-0.0.1
+              cp -r . $out/tree-sitter-lean-0.0.1/
+              rm -rf $out/tree-sitter-lean-0.0.1/.git
+
+              # Add cargo checksum file (empty checksums for local vendoring)
+              echo '{"files":{}}' > $out/tree-sitter-lean-0.0.1/.cargo-checksum.json
             '';
           };
         };
