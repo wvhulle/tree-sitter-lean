@@ -1,4 +1,4 @@
-const {PREC} = require('./basic.js')
+const PREC = require('./constants.js')
 const {Parser, min1} = require('./util.js')
 
 const match_alt = ($, rhs_parser) => seq(
@@ -48,6 +48,17 @@ module.exports = {
   term,
   match_alt,
   rules: {
+    // Character escape sequences (used in strings, chars, interpolated strings)
+    quoted_char: $ => token(
+      seq(
+        '\\', choice(
+          /u[a-fA-F\d]{4}/,
+          /x[a-fA-F\d]{2}/,
+          /[\\"'rnt]/,
+        ),
+      ),
+    ),
+
     // FIXME: see name.cpp for the real definition...
     identifier: $ => choice(
       sep1($._identifier, token.immediate('.')),

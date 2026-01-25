@@ -1,4 +1,4 @@
-const {PREC} = require('./basic.js')
+const PREC = require('./constants.js')
 const {term} = require('./term.js')
 
 // src/Lean/Parser/Do.lean

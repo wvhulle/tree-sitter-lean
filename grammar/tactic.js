@@ -1,78 +1,52 @@
-const {PREC} = require('./basic.js')
+const PREC = require('./constants.js')
 
 module.exports = {
   tactics: $ => prec.left(
     seq('by', sep1_($._tactic, seq(optional(';'), $._newline))),
   ),
 
-  // Core tactics
+  // Core tactics with arguments
   apply_tactic: $ => seq('apply', $._expression),
   rewrite: $ => seq(choice('rewrite', 'rw'), $._expression),
   term: $ => seq('exact', $._expression),
-  simp: $ => prec.right(seq(
-    'simp',
-    optional(field('extra', $.list)),
-  )),
-  simp_all: $ => prec.right(seq(
-    'simp_all',
-    optional(field('extra', $.list)),
-  )),
-  trivial: $ => 'trivial',
   intro: $ => prec.left(seq('intro', repeat($._expression))),
-  rfl: $ => 'rfl',
 
-  // Arithmetic/decision tactics
+  // Tactics with optional arguments
+  simp: $ => prec.right(seq('simp', optional(field('extra', $.list)))),
+  simp_all: $ => prec.right(seq('simp_all', optional(field('extra', $.list)))),
   grind: $ => prec.right(seq('grind', optional(field('extra', $.list)))),
-  omega: $ => 'omega',
-  ring: $ => 'ring',
   norm_num: $ => prec.right(seq('norm_num', optional(field('extra', $.list)))),
-  decide: $ => 'decide',
-  native_decide: $ => 'native_decide',
 
-  // Logic tactics
-  contradiction: $ => 'contradiction',
-  exfalso: $ => 'exfalso',
-
-  // Control tactics
-  done: $ => 'done',
-  admit: $ => 'admit',
-
-  // Proof structure tactics (simple keywords only)
-  constructor_tactic: $ => 'constructor',
-  left_tactic: $ => 'left',
-  right_tactic: $ => 'right',
-  assumption: $ => 'assumption',
+  // Simple keyword tactics - consolidated using alias() to preserve node names for queries
+  _keyword_tactic: $ => choice(
+    alias('trivial', $.trivial),
+    alias('rfl', $.rfl),
+    alias('omega', $.omega),
+    alias('ring', $.ring),
+    alias('decide', $.decide),
+    alias('native_decide', $.native_decide),
+    alias('contradiction', $.contradiction),
+    alias('exfalso', $.exfalso),
+    alias('done', $.done),
+    alias('admit', $.admit),
+    alias('constructor', $.constructor_tactic),
+    alias('left', $.left_tactic),
+    alias('right', $.right_tactic),
+    alias('assumption', $.assumption),
+  ),
 
   // Tactic-specific have - high precedence to prefer over expression-level have
   have_tactic: $ => prec.right(PREC.lead + 1, seq(
     'have',
     choice(
       // have name : type := value
-      seq(
-        field('name', $.identifier),
-        ':',
-        field('type', $._expression),
-        ':=',
-        field('value', $._expression),
-      ),
+      seq(field('name', $.identifier), ':', field('type', $._expression), ':=', field('value', $._expression)),
       // have : type := value
-      seq(
-        ':',
-        field('type', $._expression),
-        ':=',
-        field('value', $._expression),
-      ),
+      seq(':', field('type', $._expression), ':=', field('value', $._expression)),
       // have name := value (no type annotation)
-      seq(
-        field('name', $.identifier),
-        ':=',
-        field('value', $._expression),
-      ),
+      seq(field('name', $.identifier), ':=', field('value', $._expression)),
       // have := value (anonymous, inferred type)
-      seq(
-        ':=',
-        field('value', $._expression),
-      ),
+      seq(':=', field('value', $._expression)),
     ),
   )),
 
@@ -104,37 +78,20 @@ module.exports = {
     $.let_tactic,
     $.obtain,
 
-    // Core
+    // Core tactics with arguments
     $.apply_tactic,
     $.rewrite,
     $.simp,
     $.simp_all,
     $.term,
-    $.trivial,
     $.intro,
-    $.rfl,
 
-    // Arithmetic/decision
+    // Tactics with optional arguments
     $.grind,
-    $.omega,
-    $.ring,
     $.norm_num,
-    $.decide,
-    $.native_decide,
 
-    // Logic
-    $.contradiction,
-    $.exfalso,
-
-    // Control
-    $.done,
-    $.admit,
-
-    // Proof structure
-    $.constructor_tactic,
-    $.left_tactic,
-    $.right_tactic,
-    $.assumption,
+    // Consolidated keyword tactics
+    $._keyword_tactic,
 
     // Fallback for user-defined tactics
     $._user_tactic,

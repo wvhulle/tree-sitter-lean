@@ -1,30 +1,11 @@
 const attr = require('./grammar/attr.js')
-const basic = require('./grammar/basic.js')
 const command = require('./grammar/command.js')
+const PREC = require('./grammar/constants.js')
 const do_ = require('./grammar/do.js')
 const syntax = require('./grammar/syntax.js')
 const tactic = require('./grammar/tactic.js')
 const term = require('./grammar/term.js')
-const {sep1} = require('./grammar/util.js')
-
-const PREC = {
-  dollar: -5,
-  equal: -3,
-  compare: -2,
-  apply: -1,
-  multitype: -1,
-
-  opop: 13,
-  or: 14,
-  and: 15,
-  eqeq: 16,
-  plus: 17,
-  times: 18,
-  unary: 1000,
-  power: 20,
-
-  name: 30,
-}
+const {sep1, sep1_} = require('./grammar/util.js')
 
 module.exports = grammar({
   name: 'lean',
@@ -202,44 +183,40 @@ module.exports = grammar({
 
     neg: $ => prec(PREC.unary, seq('-', $._expression)),
 
+    // Binary operators grouped by precedence level
     binary_expression: $ => choice(
+      // Power (right associative)
       prec.right(PREC.power, seq($._expression, '^', $._expression)),
-      prec.left(PREC.times, seq($._expression, '*', $._expression)),
-      prec.left(PREC.times, seq($._expression, '/', $._expression)),
-      prec.left(PREC.times, seq($._expression, '%', $._expression)),
-      prec.left(PREC.plus, seq($._expression, '+', $._expression)),
-      prec.left(PREC.plus, seq($._expression, '-', $._expression)),
 
+      // Multiplicative (left associative)
+      prec.left(PREC.times, seq($._expression, choice('*', '/', '%'), $._expression)),
+
+      // Additive (left associative)
+      prec.left(PREC.plus, seq($._expression, choice('+', '-'), $._expression)),
+
+      // Composition (right associative)
       prec.right(PREC.plus, seq($._expression, '∘', $._expression)),
 
-      prec.left(PREC.opop, seq($._expression, '∧', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '∨', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '/\\', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '\\/', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '↔', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '∣', $._expression)),
+      // Logical operators
+      prec.left(PREC.opop, seq($._expression, choice('∧', '∨', '/\\', '\\/', '↔', '∣'), $._expression)),
 
+      // Boolean operators
       prec.left(PREC.or, seq($._expression, '||', $._expression)),
       prec.left(PREC.and, seq($._expression, '&&', $._expression)),
       prec.left(PREC.eqeq, seq($._expression, '==', $._expression)),
 
-      prec.left(PREC.opop, seq($._expression, '++', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '::', $._expression)),
+      // List/string operators
+      prec.left(PREC.opop, seq($._expression, choice('++', '::'), $._expression)),
 
-      prec.left(PREC.opop, seq($._expression, '|>', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '|>.', $._expression)),
+      // Pipeline operators
+      prec.left(PREC.opop, seq($._expression, choice('|>', '|>.'), $._expression)),
       prec.right(PREC.dollar, seq($._expression, '<|', $._expression)),
 
-      prec.left(PREC.opop, seq($._expression, '<|>', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '>>', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '>>=', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '<*>', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '<*', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '*>', $._expression)),
-      prec.left(PREC.opop, seq($._expression, '<$>', $._expression)),
+      // Functor/monad operators
+      prec.left(PREC.opop, seq($._expression, choice('<|>', '>>', '>>=', '<*>', '<*', '*>', '<$>'), $._expression)),
 
-      prec.left(PREC.equal, seq($._expression, '=', $._expression)),
-      prec.left(PREC.equal, seq($._expression, '≠', $._expression)),
+      // Equality operators
+      prec.left(PREC.equal, seq($._expression, choice('=', '≠'), $._expression)),
     ),
 
     comparison: $ => prec.left(PREC.compare, seq(
@@ -274,7 +251,6 @@ module.exports = grammar({
     ...command,
     ...syntax,
     ...tactic,
-    ...basic.rules,
     ...do_.rules,
     ...term.rules,
   }
