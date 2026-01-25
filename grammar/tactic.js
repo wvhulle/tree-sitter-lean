@@ -1,3 +1,5 @@
+const {PREC} = require('./basic.js')
+
 module.exports = {
   tactics: $ => prec.left(
     seq('by', sep1_($._tactic, seq(optional(';'), $._newline))),
@@ -41,10 +43,52 @@ module.exports = {
   right_tactic: $ => 'right',
   assumption: $ => 'assumption',
 
-  // Fallback for user-defined tactics and complex forms (have, let, etc.)
+  // Tactic-specific have - high precedence to prefer over expression-level have
+  have_tactic: $ => prec.right(PREC.lead + 1, seq(
+    'have',
+    choice(
+      // have name : type := value
+      seq(
+        field('name', $.identifier),
+        ':',
+        field('type', $._expression),
+        ':=',
+        field('value', $._expression),
+      ),
+      // have : type := value  
+      seq(
+        ':',
+        field('type', $._expression),
+        ':=',
+        field('value', $._expression),
+      ),
+      // have name := value (no type annotation)
+      seq(
+        field('name', $.identifier),
+        ':=',
+        field('value', $._expression),
+      ),
+    ),
+  )),
+
+  // Tactic-specific let - high precedence
+  let_tactic: $ => prec.right(PREC.lead + 1, seq(
+    'let',
+    field('name', $.identifier),
+    choice(
+      seq(':', field('type', $._expression), ':=', field('value', $._expression)),
+      seq(':=', field('value', $._expression)),
+    ),
+  )),
+
+  // Fallback for user-defined tactics
   _user_tactic: $ => $._expression,
 
   _tactic: $ => choice(
+    // Tactic-specific binders (must come before _user_tactic fallback)
+    $.have_tactic,
+    $.let_tactic,
+
     // Core
     $.apply_tactic,
     $.rewrite,
@@ -77,7 +121,7 @@ module.exports = {
     $.right_tactic,
     $.assumption,
 
-    // Fallback (handles have, let, suffices, sorry, and user-defined tactics)
+    // Fallback for user-defined tactics
     $._user_tactic,
   ),
 }

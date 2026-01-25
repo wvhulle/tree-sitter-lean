@@ -55,6 +55,8 @@ module.exports = grammar({
     [$.instance_binder, $._term],
     [$.instance_binder, $.list],
     [$.proj, $._expression],
+    [$.have_tactic, $._have_id_lhs, $._term],
+    [$.let_tactic, $._let_id_lhs, $._term],
   ],
 
   word: $ => $._identifier,
