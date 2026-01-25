@@ -6,36 +6,33 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    let
+      # Helper to build grammar for a given system
+      mkGrammar =
+        pkgs:
+        pkgs.tree-sitter.buildGrammar {
+          language = "lean";
+          version = "0.0.1-${self.shortRev or "dirty"}";
+          src = ./.;
+          generate = true;
+        };
+    in
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-
-        # Build the grammar, generating parser.c from grammar.js
-        tree-sitter-lean = pkgs.stdenv.mkDerivation {
-          pname = "tree-sitter-lean";
-          version = "0.1.0";
-          src = ./.;
-
-          nativeBuildInputs = [ pkgs.tree-sitter pkgs.nodejs ];
-
-          buildPhase = ''
-            tree-sitter generate
-          '';
-
-          installPhase = ''
-            mkdir -p $out/src
-            cp -r src/* $out/src/
-            cp grammar.js $out/
-            cp -r grammar $out/
-            cp package.json $out/
-          '';
-        };
+        grammar = mkGrammar pkgs;
       in
       {
         packages = {
-          default = tree-sitter-lean;
-          tree-sitter-lean = tree-sitter-lean;
+          default = grammar;
+          grammar = grammar;
         };
 
         devShells.default = pkgs.mkShell {
@@ -53,15 +50,29 @@
             echo "  tree-sitter generate  - Regenerate parser from grammar"
             echo "  tree-sitter test      - Run grammar tests"
             echo "  tree-sitter parse <file>  - Parse a Lean file"
+            echo "  cargo build           - Build Rust bindings"
+            echo ""
+            echo "Nix outputs:"
+            echo "  nix build             - Build the grammar (.so)"
+            echo ""
 
             # Generate parser if missing
             if [ ! -f src/parser.c ]; then
-              echo ""
               echo "Generating parser.c..."
               tree-sitter generate
             fi
           '';
         };
       }
-    );
+    )
+    // {
+      # System-independent overlay for consumers
+      overlays.default = final: prev: {
+        tree-sitter = prev.tree-sitter // {
+          grammars = prev.tree-sitter.grammars // {
+            tree-sitter-lean = mkGrammar final;
+          };
+        };
+      };
+    };
 }
