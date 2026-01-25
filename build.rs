@@ -7,7 +7,9 @@ fn copy_dir(src: &Path, dst: &Path) -> io::Result<()> {
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         if entry.path().is_file() {
-            fs::copy(entry.path(), dst.join(entry.file_name()))?;
+            // Use read/write instead of copy (nix store compatibility)
+            let content = fs::read(entry.path())?;
+            fs::write(dst.join(entry.file_name()), content)?;
         }
     }
     Ok(())
@@ -16,17 +18,9 @@ fn copy_dir(src: &Path, dst: &Path) -> io::Result<()> {
 fn generate_parser(out_dir: &Path) -> PathBuf {
     fs::create_dir_all(out_dir).expect("create OUT_DIR");
 
-    // Test if OUT_DIR is writable
-    let test_file = out_dir.join(".write_test");
-    fs::write(&test_file, "test").unwrap_or_else(|e| {
-        panic!("OUT_DIR {} not writable: {}", out_dir.display(), e)
-    });
-    fs::remove_file(&test_file).ok();
-
-    // Copy everything needed to OUT_DIR (handles read-only nix store)
-    let dest = out_dir.join("grammar.js");
-    fs::copy("grammar.js", &dest)
-        .unwrap_or_else(|e| panic!("copy grammar.js to {}: {}", dest.display(), e));
+    // Copy files using read+write (nix store has special permissions that break fs::copy)
+    let grammar = fs::read("grammar.js").expect("read grammar.js");
+    fs::write(out_dir.join("grammar.js"), grammar).expect("write grammar.js");
     copy_dir(Path::new("grammar"), &out_dir.join("grammar"))
         .unwrap_or_else(|e| panic!("copy grammar/: {}", e));
     copy_dir(Path::new("src"), &out_dir.join("src")).ok();
