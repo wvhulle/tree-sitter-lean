@@ -14,13 +14,16 @@ fn copy_dir(src: &Path, dst: &Path) -> io::Result<()> {
 }
 
 fn generate_parser(out_dir: &Path) -> PathBuf {
-    // Copy everything needed to OUT_DIR (handles read-only nix store)
-    fs::copy("grammar.js", out_dir.join("grammar.js")).expect("copy grammar.js");
-    copy_dir(Path::new("grammar"), &out_dir.join("grammar")).expect("copy grammar/");
-    copy_dir(Path::new("src"), &out_dir.join("src")).ok(); // May not exist fully yet
+    fs::create_dir_all(out_dir).expect("create OUT_DIR");
 
-    // Run tree-sitter generate in OUT_DIR
-    println!("cargo:warning=Generating parser.c...");
+    // Copy everything needed to OUT_DIR (handles read-only nix store)
+    fs::copy("grammar.js", out_dir.join("grammar.js"))
+        .unwrap_or_else(|e| panic!("copy grammar.js to {}: {}", out_dir.display(), e));
+    copy_dir(Path::new("grammar"), &out_dir.join("grammar"))
+        .unwrap_or_else(|e| panic!("copy grammar/: {}", e));
+    copy_dir(Path::new("src"), &out_dir.join("src")).ok();
+
+    println!("cargo:warning=Generating parser.c in {}...", out_dir.display());
     let status = Command::new("tree-sitter")
         .arg("generate")
         .current_dir(out_dir)
