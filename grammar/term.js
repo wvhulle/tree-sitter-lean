@@ -147,8 +147,8 @@ module.exports = {
       $._expression,
     ),
 
-    true: $ => 'true',
-    false: $ => 'false',
+    true: $ => choice('true', 'True'),
+    false: $ => choice('false', 'False'),
 
     match: $ => prec.left(seq(
       'match',

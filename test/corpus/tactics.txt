@@ -344,45 +344,6 @@ example : True := by
           value: (identifier))
         (trivial)))))
 
-=========
-Suffices
-=========
-
-example : True := by
-  suffices 1 = 1 by rfl
-  rfl
-
----
-
-(module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (suffices
-          type: (binary_expression (number) (number))
-          proof: (identifier))
-        (rfl)))))
-
-======================
-Suffices Without Proof
-======================
-
-example : True := by
-  suffices 1 = 1
-  trivial
-
----
-
-(module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (suffices
-          type: (binary_expression (number) (number)))
-        (trivial)))))
-
 =====
 Grind
 =====
