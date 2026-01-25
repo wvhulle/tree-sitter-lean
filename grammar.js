@@ -215,6 +215,7 @@ module.exports = grammar({
       prec.left(PREC.opop, seq($._expression, '/\\', $._expression)),
       prec.left(PREC.opop, seq($._expression, '\\/', $._expression)),
       prec.left(PREC.opop, seq($._expression, '↔', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '∣', $._expression)),
 
       prec.left(PREC.or, seq($._expression, '||', $._expression)),
       prec.left(PREC.and, seq($._expression, '&&', $._expression)),

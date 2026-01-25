@@ -1,2 +1,8 @@
 /foo.lean
 /target
+node_modules/
+src/parser.c
+src/grammar.json
+src/node-types.json
+result
+.direnv/
