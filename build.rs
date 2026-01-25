@@ -14,16 +14,12 @@ fn copy_dir(src: &Path, dst: &Path) -> io::Result<()> {
 }
 
 fn generate_parser(out_dir: &Path) -> PathBuf {
-    let gen_src = out_dir.join("src");
-    fs::create_dir_all(&gen_src).expect("create src dir");
-
-    // Copy source files needed for generation
-    copy_dir(Path::new("src/tree_sitter"), &gen_src.join("tree_sitter")).ok();
-    fs::copy("src/scanner.c", gen_src.join("scanner.c")).expect("copy scanner.c");
+    // Copy everything needed to OUT_DIR (handles read-only nix store)
     fs::copy("grammar.js", out_dir.join("grammar.js")).expect("copy grammar.js");
     copy_dir(Path::new("grammar"), &out_dir.join("grammar")).expect("copy grammar/");
+    copy_dir(Path::new("src"), &out_dir.join("src")).ok(); // May not exist fully yet
 
-    // Run tree-sitter generate
+    // Run tree-sitter generate in OUT_DIR
     println!("cargo:warning=Generating parser.c...");
     let status = Command::new("tree-sitter")
         .arg("generate")
@@ -32,7 +28,7 @@ fn generate_parser(out_dir: &Path) -> PathBuf {
         .expect("tree-sitter CLI not found");
     assert!(status.success(), "tree-sitter generate failed");
 
-    gen_src
+    out_dir.join("src")
 }
 
 fn main() {
