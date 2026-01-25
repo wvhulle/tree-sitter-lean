@@ -1,11 +1,12 @@
 [package]
-categories = ["parsing", "text-editors"]
-description = "lean grammar for the tree-sitter parsing library"
-edition = "2018"
-keywords = ["incremental", "parsing", "lean"]
-name = "tree-sitter-lean"
+name = "tree-sitter-lean4-source"
+version = "0.1.0"
+edition = "2021"
+description = "Tree-sitter grammar for Lean 4 (generates parser at build time)"
 repository = "https://github.com/wvhulle/tree-sitter-lean"
-version = "0.0.1"
+license = "MIT"
+keywords = ["tree-sitter", "parser", "lean", "lean4"]
+categories = ["parsing", "text-editors"]
 
 build = "build.rs"
 include = ["build.rs", "src/*", "grammar.js", "grammar/*"]
