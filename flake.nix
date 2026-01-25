@@ -33,6 +33,23 @@
         packages = {
           default = grammar;
           grammar = grammar;
+          rust-crate = pkgs.stdenv.mkDerivation {
+            pname = "tree-sitter-lean-crate";
+            version = "0.0.1";
+            src = ./.;
+
+            nativeBuildInputs = [
+              pkgs.tree-sitter
+              pkgs.nodejs
+            ];
+
+            buildPhase = "tree-sitter generate";
+
+            installPhase = ''
+              cp -r . $out
+              rm -rf $out/.git
+            '';
+          };
         };
 
         devShells.default = pkgs.mkShell {
