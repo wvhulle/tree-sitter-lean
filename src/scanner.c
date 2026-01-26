@@ -4,10 +4,6 @@ enum TokenType {
   NEWLINE,
 };
 
-static void advance(TSLexer *lexer) {
-  lexer->advance(lexer, false);
-}
-
 static void skip(TSLexer *lexer) {
   lexer->advance(lexer, true);
 }

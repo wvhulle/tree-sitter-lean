@@ -1,7 +1,8 @@
 [package]
-name = "tree-sitter-lean4-source"
-version = "0.1.0"
+name = "tree-sitter-lean4"
+version = "0.0.1"
 edition = "2021"
+authors = ["Willem Vanhulle <willemvanhulle@protonmail.com>"]
 description = "Tree-sitter grammar for Lean 4 (generates parser at build time)"
 repository = "https://github.com/wvhulle/tree-sitter-lean"
 license = "MIT"
