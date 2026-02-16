@@ -1,6 +1,9 @@
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::{fs, io};
+#[deny(clippy::pedantic)]
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 fn copy_dir(src: &Path, dst: &Path) -> io::Result<()> {
     fs::create_dir_all(dst)?;
@@ -21,11 +24,16 @@ fn generate_parser(out_dir: &Path) -> PathBuf {
     // Copy files using read+write (nix store has special permissions that break fs::copy)
     let grammar = fs::read("grammar.js").expect("read grammar.js");
     fs::write(out_dir.join("grammar.js"), grammar).expect("write grammar.js");
+    let tree_sitter_json = fs::read("tree-sitter.json").expect("read tree-sitter.json");
+    fs::write(out_dir.join("tree-sitter.json"), tree_sitter_json).expect("write tree-sitter.json");
     copy_dir(Path::new("grammar"), &out_dir.join("grammar"))
         .unwrap_or_else(|e| panic!("copy grammar/: {}", e));
     copy_dir(Path::new("src"), &out_dir.join("src")).ok();
 
-    println!("cargo:warning=Generating parser.c in {}...", out_dir.display());
+    println!(
+        "cargo:warning=Generating parser.c in {}...",
+        out_dir.display()
+    );
     let status = Command::new("tree-sitter")
         .arg("generate")
         .current_dir(out_dir)
@@ -38,7 +46,7 @@ fn generate_parser(out_dir: &Path) -> PathBuf {
 
 fn main() {
     println!("cargo:rerun-if-changed=grammar.js");
-    println!("cargo:rerun-if-changed=src/scanner.c");
+    println!("cargo:rerun-if-changed=tree-sitter.json");
     println!("cargo:rerun-if-changed=src/parser.c");
 
     let src_dir = if Path::new("src/parser.c").exists() {
@@ -54,6 +62,5 @@ fn main() {
         .flag_if_supported("-Wno-unused-but-set-variable")
         .flag_if_supported("-Wno-trigraphs")
         .file(src_dir.join("parser.c"))
-        .file(src_dir.join("scanner.c"))
         .compile("parser");
 }

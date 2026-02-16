@@ -17,8 +17,8 @@ This project contains:
 Add this crate as a normal dependency in your `Cargo.toml` file. The binary Lean parser is automatically compiled Cargo if it is missing. If it is missing, you will need these binaries for compilation with Cargo:
 
 - `tree-sitter` CLI tool for generating Tree-Sitter parsers
-- `gcc` C compiler
-  See [Tree-Sitter-Rust](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_rust).
+
+See [Tree-Sitter-Rust](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_rust).
 
 ### Nix Flake
 
@@ -26,17 +26,26 @@ This is the recommended approach for reproducible builds.
 
 ```nix
 {
-  inputs.tree-sitter-lean.url = "github:yourusername/tree-sitter-lean";
-
-  outputs = { self, nixpkgs, tree-sitter-lean }: {
-    devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
-      packages = [ nixpkgs.legacyPackages.x86_64-linux.ast-grep ];
-      shellHook = ''
-        # Create a symlink in the working directory for easy access (add to .gitignore)
-        ln -sf ${tree-sitter-lean.packages.x86_64-linux.grammar}/parser tree-sitter-lean.so
-      '';
-    };
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    tree-sitter-lean.url = "github:wvhulle/tree-sitter-lean";
   };
+
+  outputs = { nixpkgs, tree-sitter-lean, ... }:
+    let
+      system = "x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+    {
+      devShells.${system}.default = pkgs.mkShell {
+        # If you want to use ast-grep (see next section)
+        packages = [ pkgs.ast-grep ];
+        shellHook = ''
+          # Create a symlink in the working directory for easy access (add to .gitignore)
+          ln -sf ${tree-sitter-lean.packages.${system}.grammar}/parser tree-sitter-lean.so
+        '';
+      };
+    };
 }
 ```
 

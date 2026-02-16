@@ -1,6 +1,6 @@
 [package]
 name = "tree-sitter-lean4"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2021"
 authors = ["Willem Vanhulle <willemvanhulle@protonmail.com>"]
 description = "Tree-sitter grammar for Lean 4 (generates parser at build time)"
@@ -10,7 +10,7 @@ keywords = ["tree-sitter", "parser", "lean", "lean4"]
 categories = ["parsing", "text-editors"]
 
 build = "build.rs"
-include = ["build.rs", "src/*", "grammar.js", "grammar/*"]
+include = ["build.rs", "src/*", "grammar.js", "grammar/*", "tree-sitter.json"]
 
 [dependencies]
 tree-sitter = "0.25"

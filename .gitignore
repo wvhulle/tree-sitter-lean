@@ -1,5 +1,6 @@
 /target
-src/*.c
+# Too big
+src/parser.c
 # src/grammar.json
 result
 .direnv/
