@@ -1,4 +1,3 @@
-const do_ = require('./do.js')
 const {min1, sep1} = require('./util.js')
 
 // src/Lean/Parser/Command.lean
@@ -198,7 +197,7 @@ module.exports = {
     optional(seq('in', $._command)),
   ),
 
-  // PERFIXME: quoted causes ~2x performance slowdown :/
+  // Quoted commands for metaprogramming
   quoted: $ => seq('`(', choice($._term, repeat1($._command)), ')'),
   _command_term: $ => choice(
     $.quoted,

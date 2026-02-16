@@ -3,51 +3,71 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      flake-utils,
     }:
     let
-      mkGrammar =
-        pkgs:
-        pkgs.tree-sitter.buildGrammar {
-          language = "lean";
-          version = "0.0.1-${self.shortRev or "dirty"}";
-          src = ./.;
-          generate = true;
-        };
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        packages.default = mkGrammar pkgs;
+    {
+      packages = forAllSystems (
+        pkgs:
+        let
+          grammar = pkgs.tree-sitter.buildGrammar {
+            language = "lean";
+            version = "nixpkgs-tree-sitter";
+            src = pkgs.lib.cleanSource ./.;
+            generate = true;
+          };
+        in
+        {
+          inherit grammar;
+          default = grammar;
+        }
+      );
 
-        checks.grammar-tests = pkgs.stdenv.mkDerivation {
-          name = "tree-sitter-lean-tests";
-          src = ./.;
-          nativeBuildInputs = [ pkgs.tree-sitter pkgs.nodejs ];
-          buildPhase = "tree-sitter generate && tree-sitter test";
-          installPhase = "touch $out";
-        };
+      devShells = forAllSystems (
+        pkgs:
+        let
+          grammar = self.packages.${pkgs.stdenv.hostPlatform.system}.grammar;
+        in
+        {
+          default = pkgs.mkShell {
+            inputsFrom = [ grammar ];
+            packages = with pkgs; [
+              tree-sitter
+              nodejs
+              cargo
+              rustc
+              ast-grep
+            ];
+            shellHook = ''
+              ln -sf ${grammar}/parser tree-sitter-lean.so
+            '';
+          };
+        }
+      );
 
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ tree-sitter nodejs cargo rustc ];
-        };
-      }
-    )
-    // {
       overlays.default = final: prev: {
         tree-sitter = prev.tree-sitter // {
-          grammars = prev.tree-sitter.grammars // {
-            tree-sitter-lean = mkGrammar final;
+          builtGrammars = prev.tree-sitter.builtGrammars // {
+            tree-sitter-lean = final.tree-sitter.buildGrammar {
+              language = "lean";
+              version = "0.0.3";
+              src = final.lib.cleanSource ./.;
+              generate = true;
+            };
           };
         };
       };

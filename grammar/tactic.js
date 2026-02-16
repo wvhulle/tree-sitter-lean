@@ -17,7 +17,7 @@ module.exports = {
   grind: $ => prec.right(seq('grind', optional(field('extra', $.list)))),
   norm_num: $ => prec.right(seq('norm_num', optional(field('extra', $.list)))),
 
-  // Simple keyword tactics - consolidated using alias() to preserve node names for queries
+  // Simple keyword tactics
   _keyword_tactic: $ => choice(
     alias('trivial', $.trivial),
     alias('rfl', $.rfl),
@@ -35,22 +35,18 @@ module.exports = {
     alias('assumption', $.assumption),
   ),
 
-  // Tactic-specific have - high precedence to prefer over expression-level have
+  // Tactic-specific have
   have_tactic: $ => prec.right(PREC.lead + 1, seq(
     'have',
     choice(
-      // have name : type := value
       seq(field('name', $.identifier), ':', field('type', $._expression), ':=', field('value', $._expression)),
-      // have : type := value
       seq(':', field('type', $._expression), ':=', field('value', $._expression)),
-      // have name := value (no type annotation)
       seq(field('name', $.identifier), ':=', field('value', $._expression)),
-      // have := value (anonymous, inferred type)
       seq(':=', field('value', $._expression)),
     ),
   )),
 
-  // Tactic-specific let - high precedence
+  // Tactic-specific let
   let_tactic: $ => prec.right(PREC.lead + 1, seq(
     'let',
     field('name', $.identifier),
@@ -60,7 +56,7 @@ module.exports = {
     ),
   )),
 
-  // obtain tactic (Mathlib/Batteries) - for destructuring hypotheses
+  // obtain tactic (Mathlib/Batteries)
   obtain: $ => prec.right(PREC.lead + 1, seq(
     'obtain',
     field('pattern', $._expression),
@@ -69,16 +65,13 @@ module.exports = {
     field('value', $._expression),
   )),
 
-  // Fallback for user-defined tactics
   _user_tactic: $ => $._expression,
 
   _tactic: $ => choice(
-    // Tactic-specific binders (must come before _user_tactic fallback)
     $.have_tactic,
     $.let_tactic,
     $.obtain,
 
-    // Core tactics with arguments
     $.apply_tactic,
     $.rewrite,
     $.simp,
@@ -86,14 +79,11 @@ module.exports = {
     $.term,
     $.intro,
 
-    // Tactics with optional arguments
     $.grind,
     $.norm_num,
 
-    // Consolidated keyword tactics
     $._keyword_tactic,
 
-    // Fallback for user-defined tactics
     $._user_tactic,
   ),
 }

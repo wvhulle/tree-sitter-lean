@@ -28,16 +28,12 @@ module.exports = grammar({
     [$._have_id_lhs, $._term],
     [$._have_id_lhs],
     [$._let_id_lhs, $._term],
-    [$._let_id_lhs],
     [$._simple_binder],
-    [$._user_tactic, $.quoted_tactic],
     [$.assign, $._term],
     [$.identifier],
     [$.instance_binder, $._term],
     [$.instance_binder, $.list],
     [$.proj, $._expression],
-    [$.have_tactic, $._have_id_lhs, $._term],
-    [$.let_tactic, $._let_id_lhs, $._term],
   ],
 
   word: $ => $._identifier,
@@ -73,7 +69,6 @@ module.exports = grammar({
       $.quoted_tactic,
       $.fun,
       $._term,
-
       $.do,
       $.unless,
     ),
@@ -89,15 +84,9 @@ module.exports = grammar({
       optional(field('body', $._expression)),
     )),
 
+    // Do notation (simplified top-level; full do rules in do.js)
     _do_seq: $ => prec.right(sep1_($._do_element, $._newline)),
     do: $ => prec.right(seq('do', $._do_seq)),
-
-    conditional_when: $ => prec.right(seq(
-      'if',
-      $._expression,
-      'then',
-      $._do_element,
-    )),
 
     for_in: $ => seq(
       'for',
@@ -129,27 +118,6 @@ module.exports = grammar({
 
     unless: $ => seq('unless', $._expression, $.do),
 
-    // FIXME: nesting (which depends on the indent processing)
-    try: $ => prec.left(1, seq(
-      'try',
-      sep1_($._do_element, $._newline),
-      choice(
-        seq($.catch, optional($.finally)),
-        $.finally,
-    ))),
-
-    catch: $ => prec.left(seq(
-      'catch',
-      $._expression,
-      '=>',
-      sep1_($._do_element, $._newline),
-    )),
-
-    finally: $ => prec.left(seq(
-      'finally',
-      sep1_($._do_element, $._newline),
-    )),
-
     fun: $ => prec.right(seq(
       choice('fun', 'λ'),
       choice(
@@ -174,7 +142,6 @@ module.exports = grammar({
       field('arguments', repeat1($._argument)),
     )),
 
-    // FIXME: This is almost certainly wrong
     _dollar: $ => prec.right(PREC.dollar, seq(
       field('name', $._expression),
       '$',
@@ -183,52 +150,48 @@ module.exports = grammar({
 
     neg: $ => prec(PREC.unary, seq('-', $._expression)),
 
-    // Binary operators grouped by precedence level
     binary_expression: $ => choice(
-      // Power (right associative)
       prec.right(PREC.power, seq($._expression, '^', $._expression)),
 
-      // Multiplicative (left associative)
-      prec.left(PREC.times, seq($._expression, choice('*', '/', '%'), $._expression)),
+      prec.left(PREC.times, seq($._expression, '*', $._expression)),
+      prec.left(PREC.times, seq($._expression, '/', $._expression)),
+      prec.left(PREC.times, seq($._expression, '%', $._expression)),
 
-      // Additive (left associative)
-      prec.left(PREC.plus, seq($._expression, choice('+', '-'), $._expression)),
-
-      // Composition (right associative)
+      prec.left(PREC.plus, seq($._expression, '+', $._expression)),
+      prec.left(PREC.plus, seq($._expression, '-', $._expression)),
+      prec.left(PREC.plus, seq($._expression, '++', $._expression)),
+      prec.left(PREC.plus, seq($._expression, '::', $._expression)),
       prec.right(PREC.plus, seq($._expression, '∘', $._expression)),
 
-      // Logical operators
-      prec.left(PREC.opop, seq($._expression, choice('∧', '∨', '/\\', '\\/', '↔', '∣'), $._expression)),
-
-      // Boolean operators
-      prec.left(PREC.or, seq($._expression, '||', $._expression)),
-      prec.left(PREC.and, seq($._expression, '&&', $._expression)),
       prec.left(PREC.eqeq, seq($._expression, '==', $._expression)),
 
-      // List/string operators
-      prec.left(PREC.opop, seq($._expression, choice('++', '::'), $._expression)),
+      prec.left(PREC.and, seq($._expression, '&&', $._expression)),
+      prec.left(PREC.or, seq($._expression, '||', $._expression)),
 
-      // Pipeline operators
-      prec.left(PREC.opop, seq($._expression, choice('|>', '|>.'), $._expression)),
+      prec.left(PREC.opop, seq($._expression, '∧', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '∨', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '/\\', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '\\/', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '↔', $._expression)),
+
+      prec.left(PREC.opop, seq($._expression, '|>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '|>.', $._expression)),
       prec.right(PREC.dollar, seq($._expression, '<|', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<|>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '>>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '>>=', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<*>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<*', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '*>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<$>', $._expression)),
 
-      // Functor/monad operators
-      prec.left(PREC.opop, seq($._expression, choice('<|>', '>>', '>>=', '<*>', '<*', '*>', '<$>'), $._expression)),
-
-      // Equality operators
-      prec.left(PREC.equal, seq($._expression, choice('=', '≠'), $._expression)),
+      prec.left(PREC.equal, seq($._expression, '=', $._expression)),
+      prec.left(PREC.equal, seq($._expression, '≠', $._expression)),
     ),
 
     comparison: $ => prec.left(PREC.compare, seq(
       $._expression,
-      choice(
-        '<',
-        '>',
-        '≤',
-        '≥',
-        '<=',
-        '>=',
-      ),
+      choice('<', '>', '≤', '≥', '<=', '>=', '∣'),
       $._expression,
     )),
 
@@ -245,7 +208,7 @@ module.exports = grammar({
     )),
 
     _identifier: $ => /[_a-zA-ZͰ-ϿĀ-ſ\U0001D400-\U0001D7FF][_`'`a-zA-Z0-9Ͱ-ϿĀ-ſ∇!?\u2070-\u209F\U0001D400-\U0001D7FF]*/,
-    _escaped_identifier: $ =>  /«[^»]*»/,
+    _escaped_identifier: $ => /«[^»]*»/,
 
     ...attr,
     ...command,
@@ -254,4 +217,4 @@ module.exports = grammar({
     ...do_.rules,
     ...term.rules,
   }
-});
+})

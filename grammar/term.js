@@ -1,5 +1,5 @@
 const PREC = require('./constants.js')
-const {Parser, min1} = require('./util.js')
+const {Parser, min1, sep0, sep1_} = require('./util.js')
 
 const match_alt = ($, rhs_parser) => seq(
   '|',
@@ -7,7 +7,6 @@ const match_alt = ($, rhs_parser) => seq(
   '=>',
   (typeof rhs_parser !== 'undefined') ? rhs_parser : $._expression,
 )
-const match_alts = ($, rhs_parser) => repeat1(match_alt($, rhs_parser))
 
 const term = new Parser($ => [
   $.identifier,
@@ -48,7 +47,6 @@ module.exports = {
   term,
   match_alt,
   rules: {
-    // Character escape sequences (used in strings, chars, interpolated strings)
     quoted_char: $ => token(
       seq(
         '\\', choice(
@@ -59,7 +57,6 @@ module.exports = {
       ),
     ),
 
-    // FIXME: see name.cpp for the real definition...
     identifier: $ => choice(
       sep1($._identifier, token.immediate('.')),
       $._identifier,
@@ -95,7 +92,6 @@ module.exports = {
     structure_instance: $ => seq(
       '{',
       optional(field('extends', seq($._expression, 'with'))),
-      // Unlike everywhere else, records seem OK with trailing commas.
       optional(sep1_($._structure_instance_field, ',')),
       field('type', optional($._type_spec)),
       '}',

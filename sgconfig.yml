@@ -1,0 +1,5 @@
+customLanguages:
+  lean:
+    libraryPath: tree-sitter-lean.so
+    extensions: [lean]
+    expandoChar: _

@@ -1,7 +1,4 @@
-const
-
-macro_rhs = (parser) => seq('`(', repeat1(parser), ')');
-
+const macro_rhs = (parser) => seq('`(', repeat1(parser), ')')
 
 // src/Lean/Parser/Syntax.lean
 module.exports = {
@@ -52,10 +49,6 @@ module.exports = {
   ),
   _macro_tail_command: $ => seq(
     ' : ', 'command', '=>', macro_rhs($._command),
-  ),
-  // Too lazy to implement macro_tail_default with a stack for now...
-  _macro_tail_default: $ => seq(
-    ' : ', $.identifier, '=>', macro_rhs(choice($._tactic, $._command)),
   ),
   _macro_tail: $ => choice(
     $._macro_tail_tactic,
