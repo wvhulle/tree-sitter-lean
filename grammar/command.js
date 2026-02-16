@@ -206,7 +206,7 @@ module.exports = {
   builtin_initialize: $ => seq(
     optional($._visibility),
     'builtin_initialize',
-    optional(seq($.identifier, $._type_spec, $._left_arrow)),
+    optional(seq($.identifier, $._type_spec, $.left_arrow)),
     $._do_seq,
   ),
 
@@ -229,5 +229,10 @@ module.exports = {
     $.syntax,
     $.macro,
     $.elab,
+
+    // Do-block elements reachable at top level so that
+    // ast-grep patterns like `let $A ← increment` parse correctly.
+    $.let_bind,
+    $.do_return,
   ),
 }

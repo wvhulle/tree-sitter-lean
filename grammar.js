@@ -34,6 +34,7 @@ module.exports = grammar({
     [$.instance_binder, $._term],
     [$.instance_binder, $.list],
     [$.proj, $._expression],
+    [$._where_decls],
   ],
 
   word: $ => $._identifier,
@@ -105,14 +106,14 @@ module.exports = grammar({
     let_mut: $ => seq(
       'let', 'mut',
       $.parameters,
-      choice($._left_arrow, ':='),
+      choice($.left_arrow, ':='),
       field('value', $._expression),
     ),
 
     let_bind: $ => seq(
       'let',
       field('name', $.identifier),
-      $._left_arrow,
+      $.left_arrow,
       field('value', $._expression),
     ),
 

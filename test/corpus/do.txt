@@ -517,3 +517,35 @@ def test : IO Unit := do
               (apply
                 name: (identifier)
                 arguments: (string)))))))
+
+==================================
+Let Bind With Left Arrow (Visible)
+==================================
+
+def test : StateM Counter Nat := do
+  let x ← get
+  let y <- increment
+
+---
+
+(module
+  (declaration
+    (def
+      name: (identifier)
+      type:
+        (apply
+          name: (identifier)
+          arguments:
+            (apply
+              name: (identifier)
+              arguments: (identifier)))
+      body:
+        (do
+          (let_bind
+            name: (identifier)
+            (left_arrow)
+            value: (identifier))
+          (let_bind
+            name: (identifier)
+            (left_arrow)
+            value: (identifier))))))

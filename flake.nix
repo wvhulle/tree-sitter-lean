@@ -26,7 +26,7 @@
         let
           grammar = pkgs.tree-sitter.buildGrammar {
             language = "lean";
-            version = "nixpkgs-tree-sitter";
+            version = "0.0.5";
             src = pkgs.lib.cleanSource ./.;
             generate = true;
           };
