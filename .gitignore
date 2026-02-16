@@ -1,11 +1,6 @@
-/foo.lean
 /target
-node_modules/
-src/parser.c
+src/*.c
 # src/grammar.json
-# Deliberately shipping on Git to ship it compiled from Crates.io
-# Otherwise consumers
-src/node-types.json
 result
 .direnv/
 tree-sitter-lean.so
