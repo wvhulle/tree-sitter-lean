@@ -59,6 +59,7 @@ module.exports = {
 
     identifier: $ => choice(
       sep1($._identifier, token.immediate('.')),
+      prec(1, seq('.', $._identifier)),
       $._identifier,
       $._escaped_identifier,
     ),

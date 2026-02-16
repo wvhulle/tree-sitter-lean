@@ -492,3 +492,28 @@ If Condition Function Application
 ;        (match_alt (number) (number))
 ;        (match_alt (hole) (number))
 ;        (type_ascription (identifier)))))))
+
+========================
+Return Dot Identifier
+========================
+
+def test : IO Unit := do
+  return .error "something went wrong"
+
+---
+
+(module
+  (declaration
+    (def
+      name: (identifier)
+      type:
+        (apply
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (do
+          (do_return
+            value:
+              (apply
+                name: (identifier)
+                arguments: (string)))))))

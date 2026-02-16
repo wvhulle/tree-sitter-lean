@@ -57,7 +57,7 @@ customLanguages:
     expandoChar: _
 ```
 
-Now use ast-grep:
+Now use `ast-grep`:
 
 ```bash
 nix develop
@@ -69,6 +69,12 @@ Note that you can't just use write any expression in the `-p` argument. Expressi
 ## Development
 
 Based on <https://github.com/Julian/lean.nvim>.
+
+Publish to Crates.io with:
+
+```bash
+cargo publish --allow-dirty
+```
 
 ## License
 

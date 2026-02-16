@@ -53,6 +53,7 @@
               ast-grep
             ];
             shellHook = ''
+              rm -f tree-sitter-lean.so
               ln -sf ${grammar}/parser tree-sitter-lean.so
             '';
           };
