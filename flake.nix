@@ -33,6 +33,9 @@
             version = "0.0.8";
             src = pkgs.lib.cleanSource ./.;
             generate = true;
+            postInstall = ''
+              mv $out/parser $out/lean.so
+            '';
           };
         in
         {
@@ -58,7 +61,7 @@
             ];
             shellHook = ''
               rm -f tree-sitter-lean.so
-              ln -sf ${grammar}/parser tree-sitter-lean.so
+              ln -sf ${grammar}/lean.so tree-sitter-lean.so
             '';
           };
         }
