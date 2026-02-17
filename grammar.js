@@ -74,7 +74,6 @@ module.exports = grammar({
     $._type_spec,
   ],
 
-  // Minimal conflicts - only where truly necessary
   conflicts: $ => [],
 
   rules: {
@@ -562,19 +561,19 @@ module.exports = grammar({
       )),
     )),
 
-    // Match in do-block: whole match gets a layout, arms delimited by `|`.
-    // Each arm's body is a _do_seq (can contain reassignment, if-let, etc.)
+    // Match in do-block: arms have do-sequences as bodies.
+    // Arms are delimited by `|` — the scanner suppresses LAYOUT_SEMICOLON
+    // before `|` so that _do_seq doesn't consume it.
     do_match: $ => prec.left(1, seq(
       'match',
       field('scrutinees', commaSep1($._expression)),
       'with',
-      $._layout_start,
       repeat1($.do_match_arm),
-      optional($._layout_end),
     )),
 
+    // Match arm body uses layout to support multi-line do-sequences.
+    // The `|` at the start of the next arm triggers layout_end for the current arm body.
     do_match_arm: $ => prec.right(seq(
-      optional($._layout_semicolon),
       '|',
       field('patterns', commaSep1($._expression)),
       '=>',

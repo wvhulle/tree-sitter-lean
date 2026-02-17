@@ -11,6 +11,10 @@
  * Key design: a `queued_indent` field persists across scanner calls so that
  * a single newline can produce multiple LAYOUT_END tokens (one per popped
  * level) followed by a LAYOUT_SEMICOLON, across successive scanner invocations.
+ *
+ * Special case: `|` at the start of a line does NOT get a LAYOUT_SEMICOLON.
+ * This matches Lean 4's parser where match arms are delimited by `|` tokens
+ * rather than by the indentation-based semicolon mechanism.
  */
 
 #include "tree_sitter/parser.h"
@@ -95,6 +99,7 @@ static bool is_nl(int32_t c) { return c == '\n' || c == '\r'; }
 /**
  * Skip newlines + leading whitespace, return column of first non-blank char.
  * If EOF is reached, return 0 (dedent everything).
+ * After this call, lexer->lookahead is the first non-blank character.
  */
 static uint32_t measure_indent(TSLexer *lexer) {
   while (is_nl(lexer->lookahead))
@@ -102,6 +107,15 @@ static uint32_t measure_indent(TSLexer *lexer) {
   skip_spaces(lexer);
   if (lexer->eof(lexer)) return 0;
   return lexer->get_column(lexer);
+}
+
+/**
+ * Check if we should suppress LAYOUT_SEMICOLON.
+ * In Lean 4, match arms are delimited by `|` without semicolons.
+ * The `|` token at the start of a line should not trigger a semicolon.
+ */
+static bool should_suppress_semicolon(TSLexer *lexer) {
+  return lexer->lookahead == '|';
 }
 
 /* ── main scan ─────────────────────────────────────────────────── */
@@ -122,17 +136,13 @@ bool tree_sitter_lean_external_scanner_scan(
   /* 1. LAYOUT_START — grammar just saw `do`, `where`, `:=`, `=>`
         and wants to open a new layout block. */
   if (valid_symbols[LAYOUT_START]) {
-    // Skip to the first token of the new block.
     skip_spaces(lexer);
     if (is_nl(lexer->lookahead)) {
-      // Block starts on next line — measure its indent.
       uint32_t indent = measure_indent(lexer);
       push(s, indent);
     } else {
-      // Same-line block: `do return 0`
       push(s, lexer->get_column(lexer));
     }
-    // Drain any queued indent from a previous newline.
     s->queued_indent = NO_QUEUED;
     lexer->result_symbol = LAYOUT_START;
     return true;
@@ -148,15 +158,25 @@ bool tree_sitter_lean_external_scanner_scan(
     if (qi < ci && valid_symbols[LAYOUT_END]) {
       pop(s);
       lexer->result_symbol = LAYOUT_END;
-      // Keep queued_indent — next call will check the new top.
       return true;
     }
     if (qi == ci && valid_symbols[LAYOUT_SEMICOLON]) {
+      // Peek ahead past newlines+whitespace to see the actual next token.
+      // Don't emit semicolon before `|` — match arms are delimited
+      // by `|` tokens, not by layout semicolons.
+      skip_spaces(lexer);
+      while (is_nl(lexer->lookahead)) {
+        lexer->advance(lexer, true);
+        skip_spaces(lexer);
+      }
+      if (should_suppress_semicolon(lexer)) {
+        s->queued_indent = NO_QUEUED;
+        return false;
+      }
       s->queued_indent = NO_QUEUED;
       lexer->result_symbol = LAYOUT_SEMICOLON;
       return true;
     }
-    // qi > ci (continuation line) or token not valid — clear and fall through.
     s->queued_indent = NO_QUEUED;
   }
 
@@ -165,23 +185,26 @@ bool tree_sitter_lean_external_scanner_scan(
 
   /* 4. Newline — measure indent of next line and start processing. */
   if (is_nl(lexer->lookahead) && s->depth > 0) {
-    // Mark end *before* consuming newlines so the resulting token is zero-width.
     lexer->mark_end(lexer);
     uint32_t next = measure_indent(lexer);
     uint32_t ci   = top_indent(s);
 
     if (next < ci && valid_symbols[LAYOUT_END]) {
       pop(s);
-      s->queued_indent = next; // remember for subsequent calls
+      s->queued_indent = next;
       lexer->result_symbol = LAYOUT_END;
       return true;
     }
     if (next == ci && valid_symbols[LAYOUT_SEMICOLON]) {
+      // Suppress semicolon before `|`
+      if (should_suppress_semicolon(lexer)) {
+        s->queued_indent = NO_QUEUED;
+        return false;
+      }
       s->queued_indent = NO_QUEUED;
       lexer->result_symbol = LAYOUT_SEMICOLON;
       return true;
     }
-    // Greater indent → continuation, no layout token.
     return false;
   }
 
@@ -192,8 +215,7 @@ bool tree_sitter_lean_external_scanner_scan(
     return true;
   }
 
-  /* 6. Closing bracket/paren/brace — force-close one layout level.
-        This handles cases like `(Id.run do ...) + 1`. */
+  /* 6. Closing bracket/paren/brace — force-close one layout level. */
   if (valid_symbols[LAYOUT_END] && s->depth > 0) {
     int32_t c = lexer->lookahead;
     if (c == ')' || c == ']' || c == '}') {
