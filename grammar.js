@@ -109,21 +109,21 @@ module.exports = grammar({
     ),
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
-    namespace: $ => seq('namespace', field('name', $._name)),
+    namespace: $ => seq('namespace', field('name', $.name)),
     
     section: $ => seq('section', optional(field('name', $.identifier))),
     
     // End: `end` or `end Foo` or `end Foo.Bar.Baz`
-    end: $ => seq('end', optional(field('name', $._name))),
+    end: $ => seq('end', optional(field('name', $.name))),
 
     // Open: `open Foo.Bar` or `open Foo Bar Baz` or `open Foo hiding x` or `open Foo (x y)`
     open: $ => seq(
       'open',
       optional('scoped'),
-      repeat1(field('namespace', $._name)),
+      repeat1(field('namespace', $.name)),
       optional(choice(
-        seq('hiding', repeat1(field('hiding', $._name))),
-        seq('(', repeat1(field('only', $._name)), ')'),
+        seq('hiding', repeat1(field('hiding', $.name))),
+        seq('(', repeat1(field('only', $.name)), ')'),
         seq('in', $._expression),
       )),
     ),
@@ -146,7 +146,7 @@ module.exports = grammar({
     // All share the same structure: keyword name binders? type? := body
     definition: $ => seq(
       field('kind', choice('def', 'theorem', 'lemma', 'abbrev', 'instance')),
-      field('name', $._name),
+      field('name', $.name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       ':=',
@@ -273,16 +273,14 @@ module.exports = grammar({
 
     // Function application: `f x y z`
     // Uses prec.left to parse `f x y` as `(f x) y`
-    // Argument can be an atom (normal case) or a trailing block expression (fun, if, match)
-    // Note: `do` is not included because it conflicts with for_in body parsing
     application: $ => prec.left(PREC.app, seq(
       field('function', $._expression),
       field('argument', choice(
         $._atom,
-        $.fun,    // trailing: f fun x => e
-        $.if,     // trailing: f if c then a else b
-        $.if_let, // trailing: f if let p := e then a else b
-        $.match,  // trailing: f match x with | ...
+        $.fun,
+        $.if,
+        $.if_let,
+        $.match,
       )),
     )),
 
@@ -296,7 +294,7 @@ module.exports = grammar({
     )),
 
     // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
-    _name: $ => sep1($.identifier, token.immediate('.')),
+    name: $ => sep1($.identifier, token.immediate('.')),
 
     // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
     projection: $ => prec.left(PREC.proj, seq(
@@ -495,7 +493,8 @@ module.exports = grammar({
 
     // Using prec.left to prefer NOT consuming the next expression
     // (let the do-block parse it as a separate element)
-    do_return: $ => prec.left(seq('return', optional(field('value', $._expression)))),
+    // Return should consume its value expression
+    do_return: $ => prec.right(seq('return', optional(field('value', $._expression)))),
 
     // For loop: `for x in xs do ...` or `for h : x in xs do ...`
     // Body is a do-block (nested do) with its own layout
