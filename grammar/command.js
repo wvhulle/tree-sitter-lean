@@ -1,7 +1,10 @@
 const {min1, sep1} = require('./util.js')
 
-// src/Lean/Parser/Command.lean
 module.exports = {
+  // src/Lean/Parser/Module.lean
+  prelude: $ => 'prelude',
+  import: $ => seq('import', field('module', $.identifier)),
+
   _visibility: $ => choice('private', 'protected'),
   _decl_modifiers: $ => seq(
     min1(

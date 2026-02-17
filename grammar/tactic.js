@@ -1,4 +1,5 @@
 const PREC = require('./constants.js')
+const {sep1_} = require('./util.js')
 
 module.exports = {
   tactics: $ => prec.left(

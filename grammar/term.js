@@ -1,5 +1,5 @@
 const PREC = require('./constants.js')
-const {Parser, min1, sep0, sep1_} = require('./util.js')
+const {Parser, min1, sep0, sep1, sep1_} = require('./util.js')
 
 const match_alt = ($, rhs_parser) => seq(
   '|',
@@ -47,6 +47,122 @@ module.exports = {
   term,
   match_alt,
   rules: {
+    parameters: $ => seq(
+      repeat1(
+        choice(
+          field('name', $.identifier),
+          $.hole,
+          $._bracketed_binder,
+          $.anonymous_constructor,
+        )
+      ),
+    ),
+
+    // src/Lean/Parser/Term.lean: «let»
+    // "let" >> letConfig >> letDecl >> optSemicolon termParser
+    let: $ => prec.right(seq(
+      'let',
+      field('name', $.identifier),
+      optional(field('parameters', $.parameters)),
+      optional(seq(':', field('type', $._expression))),
+      ':=',
+      field('value', $._expression),
+      choice($._newline, ';'),
+      field('body', $._expression),
+    )),
+
+    fun: $ => prec.right(seq(
+      choice('fun', 'λ'),
+      choice(
+        seq(
+          $.parameters,
+          '=>',
+          $._expression,
+        ),
+        repeat(seq(
+          '|',
+          field('lhs', sep1($._expression, ',')),
+          '=>',
+          $._expression,
+        )),
+      ),
+    )),
+
+    apply: $ => choice($._apply, $._dollar),
+
+    _apply: $ => prec(PREC.apply, seq(
+      field('name', term.forbid($, 'match')),
+      field('arguments', repeat1($._argument)),
+    )),
+
+    _dollar: $ => prec.right(PREC.dollar, seq(
+      field('name', $._expression),
+      '$',
+      field('argument', $._expression),
+    )),
+
+    neg: $ => prec(PREC.unary, seq('-', $._expression)),
+
+    binary_expression: $ => choice(
+      prec.right(PREC.power, seq($._expression, '^', $._expression)),
+
+      prec.left(PREC.times, seq($._expression, '*', $._expression)),
+      prec.left(PREC.times, seq($._expression, '/', $._expression)),
+      prec.left(PREC.times, seq($._expression, '%', $._expression)),
+
+      prec.left(PREC.plus, seq($._expression, '+', $._expression)),
+      prec.left(PREC.plus, seq($._expression, '-', $._expression)),
+      prec.left(PREC.plus, seq($._expression, '++', $._expression)),
+      prec.left(PREC.plus, seq($._expression, '::', $._expression)),
+      prec.right(PREC.plus, seq($._expression, '∘', $._expression)),
+
+      prec.left(PREC.eqeq, seq($._expression, '==', $._expression)),
+
+      prec.left(PREC.and, seq($._expression, '&&', $._expression)),
+      prec.left(PREC.or, seq($._expression, '||', $._expression)),
+
+      prec.left(PREC.opop, seq($._expression, '∧', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '∨', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '/\\', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '\\/', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '↔', $._expression)),
+
+      prec.left(PREC.opop, seq($._expression, '|>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '|>.', $._expression)),
+      prec.right(PREC.dollar, seq($._expression, '<|', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<|>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '>>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '>>=', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<*>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<*', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '*>', $._expression)),
+      prec.left(PREC.opop, seq($._expression, '<$>', $._expression)),
+
+      prec.left(PREC.equal, seq($._expression, '=', $._expression)),
+      prec.left(PREC.equal, seq($._expression, '≠', $._expression)),
+    ),
+
+    comparison: $ => prec.left(PREC.compare, seq(
+      $._expression,
+      choice('<', '>', '≤', '≥', '<=', '>=', '∣'),
+      $._expression,
+    )),
+
+    comment: $ => token(choice(
+      seq('--', /.*/),
+      seq(
+        '/-',
+        repeat(choice(
+          /[^-]/,
+          /-[^/]/
+        )),
+        '-/',
+      ),
+    )),
+
+    _identifier: $ => /[_a-zA-ZͰ-ϿĀ-ſ\U0001D400-\U0001D7FF][_`'`a-zA-Z0-9Ͱ-ϿĀ-ſ∇!?\u2070-\u209F\U0001D400-\U0001D7FF]*/,
+    _escaped_identifier: $ => /«[^»]*»/,
+
     quoted_char: $ => token(
       seq(
         '\\', choice(
