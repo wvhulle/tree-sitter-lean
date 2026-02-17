@@ -116,8 +116,9 @@
   "section"
   "namespace"
   "end"
-  "prelude"
 ] @keyword
+
+(prelude) @keyword
 
 [
   "open"
@@ -136,7 +137,6 @@
   "forall"
   "∀"
   "where"
-  "have"
 ] @keyword
 
 [
@@ -159,7 +159,7 @@
 
 "return" @keyword.control.return
 
-(sorry) @keyword
+(sorry) @keyword.control
 
 ; ── Operators ────────────────────────────────────────────────
 
