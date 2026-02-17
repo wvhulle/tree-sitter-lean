@@ -1,6 +1,6 @@
 /target
 # Too big
-src/parser.c
+# src/parser.c
 src/*.json
 result
 .direnv/
