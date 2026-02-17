@@ -158,19 +158,20 @@ module.exports = {
       $.structure,
     ),
   ),
+  // src/Lean/Parser/Command.lean: section, namespace, end are separate commands.
+  // In Lean 4, namespace/section do NOT contain their body;
+  // `end` is a standalone command that closes the most recent scope.
   section: $ => seq(
     'section',
     optional(field('name', $.identifier)),
-    field('body', repeat($._command)),
-    'end',
-    optional($.identifier),
   ),
   namespace: $ => seq(
     'namespace',
     field('name', $.identifier),
-    field('body', repeat($._command)),
+  ),
+  end: $ => seq(
     'end',
-    $.identifier,
+    optional(field('name', $.identifier)),
   ),
   variable: $ => seq('variable', repeat1($._bracketed_binder)),
   universe: $ => seq('universe', repeat1($.identifier)),
@@ -194,10 +195,21 @@ module.exports = {
     ')',
   ),
 
+  // src/Lean/Parser/Command.lean: openDecl variants
+  // openSimple: open Foo Bar
+  // openOnly:   open Foo (bar baz)
+  // openHiding: open Foo hiding bar
+  // openScoped: open scoped Foo
+  // openRenaming: open Foo renaming bar → baz
   open: $ => seq(
     'open',
+    optional('scoped'),
     repeat1(field('namespace', $.identifier)),
-    optional(seq('in', $._command)),
+    optional(choice(
+      field('only', seq('(', repeat1($.identifier), ')')),
+      field('hiding', seq('hiding', repeat1($.identifier))),
+      seq('in', $._command),
+    )),
   ),
 
   // Quoted commands for metaprogramming
@@ -217,6 +229,7 @@ module.exports = {
     $.declaration,
     $.section,
     $.namespace,
+    $.end,
     $.variable,
     $.universe,
     $.hash_command,

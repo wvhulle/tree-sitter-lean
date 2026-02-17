@@ -1,7 +1,7 @@
 /target
 # Too big
 src/parser.c
-# src/grammar.json
+src/*.json
 result
 .direnv/
 tree-sitter-lean.so

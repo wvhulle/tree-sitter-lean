@@ -371,20 +371,28 @@ module.exports = {
     list: $ => seq('[', sep0($._expression, ','), ']'),
 
     assumption_literal: $ => seq('‹', $._term, '›'),
+    // Supports both `if c then a else b` (term) and `if c then a` (do-block without else).
     if_then_else: $ => seq(
       'if',
       $._expression,
       'then',
       $._expression,
-      'else',
-      $._expression,
+      optional(seq('else', $._expression)),
     ),
+
+    // src/Lean/Parser/Do.lean: while cond do body
+    while: $ => seq('while', $._expression, $.do),
+    break: $ => 'break',
+    continue: $ => 'continue',
 
     _notation_term: $ => choice(
       $.product,
       $.unary_expression,
       $.subtype,
       $.if_then_else,
+      $.while,
+      $.break,
+      $.continue,
       $.list,
       $.assumption_literal,
     ),

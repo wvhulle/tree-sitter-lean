@@ -34,6 +34,7 @@ module.exports = grammar({
     [$.proj, $._expression],
     [$.proj, $._do_expression],
     [$._where_decls],
+    [$.if_then_else],
     [$.let, $._do_let],
     [$._expression, $._do_expression],
   ],
