@@ -59,7 +59,7 @@ module.exports = grammar({
   ],
 
   // Keyword extraction improves error detection and compile time
-  word: $ => $._identifier,
+  word: $ => $.identifier,
 
   // Supertype nodes for better queries
   supertypes: $ => [
@@ -90,7 +90,9 @@ module.exports = grammar({
 
     prelude: _ => 'prelude',
 
-    import: $ => seq('import', field('module', $.identifier)),
+    // Import: `import Lean.Data.Json`
+    // Module path is parsed as identifier or projection chain
+    import: $ => seq('import', field('module', $._expression)),
 
     // ============================================================
     // Commands
@@ -106,18 +108,39 @@ module.exports = grammar({
       $.universe,
     ),
 
-    namespace: $ => seq('namespace', field('name', $.identifier)),
+    // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
+    namespace: $ => seq(
+      'namespace',
+      field('name', $.identifier),
+      repeat(seq(token.immediate('.'), $.identifier)),
+    ),
     
     section: $ => seq('section', optional(field('name', $.identifier))),
     
     end: $ => seq('end', optional(field('name', $.identifier))),
 
+    // Open: `open Foo.Bar` or `open Foo Bar Baz` or `open Foo hiding x` or `open Foo (x y)`
     open: $ => seq(
       'open',
       optional('scoped'),
-      repeat1(field('namespace', $.identifier)),
-      optional(field('hiding', seq('hiding', repeat1($.identifier)))),
-      optional(field('only', seq('(', repeat1($.identifier), ')'))),
+      repeat1($._open_namespace),  // Multiple namespaces allowed
+      optional(choice(
+        field('hiding', seq('hiding', repeat1($._open_name))),
+        field('only', seq('(', repeat1($._open_name), ')')),
+        seq('in', $._expression),  // open Foo in expr
+      )),
+    ),
+
+    // A namespace in open: `Foo` or `Foo.Bar.Baz`
+    _open_namespace: $ => seq(
+      field('namespace', $.identifier),
+      repeat(seq(token.immediate('.'), $.identifier)),
+    ),
+
+    // A name in open hiding/only: `foo` or `Foo.bar.baz`
+    _open_name: $ => seq(
+      $.identifier,
+      repeat(seq(token.immediate('.'), $.identifier)),
     ),
 
     variable: $ => seq('variable', repeat1($._bracketed_binder)),
@@ -276,6 +299,7 @@ module.exports = grammar({
     _expression: $ => choice(
       $._atom,
       $.application,
+      $.subscript,
       $.binary_expression,
       $.unary_expression,
       $.projection,
@@ -292,6 +316,7 @@ module.exports = grammar({
     // Atoms: self-delimiting expressions that can appear as function arguments
     _atom: $ => choice(
       $.identifier,
+      $.escaped_identifier,
       $.number,
       $.string,
       $.char,
@@ -314,11 +339,23 @@ module.exports = grammar({
       field('argument', $._atom),
     )),
 
-    // Projection: `x.foo` or `x.1` or `x.«name»`
-    projection: $ => prec.left(PREC.proj, seq(
+    // Array/list subscript: `arr[i]` or `arr[i]!` or `arr[i]?`
+    subscript: $ => prec(PREC.proj, seq(
       field('object', $._expression),
-      token.immediate('.'),
-      field('field', choice($._identifier, $._escaped_identifier, $.number)),
+      token.immediate('['),
+      field('index', $._expression),
+      ']',
+      optional(field('modifier', choice('!', '?'))),
+    )),
+
+    // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
+    projection: $ => prec.left(PREC.proj, seq(
+      optional(field('object', $._expression)),
+      choice(
+        token.immediate('.'),  // For `x.field` where x is an expression
+        '.',                   // For `.field` (leading dot)
+      ),
+      field('field', choice($.identifier, $.escaped_identifier, $.number)),
     )),
 
     // Arrow type: `A → B`
@@ -508,16 +545,18 @@ module.exports = grammar({
     do_return: $ => prec.left(seq('return', optional(field('value', $._expression)))),
 
     // For loop: `for x in xs do ...` or `for h : x in xs do ...`
-    // Body is a do-block (nested do)
-    for_in: $ => seq(
+    // Body is a do-block (nested do) with its own layout
+    for_in: $ => prec.right(seq(
       'for',
       optional(seq(field('bound', $.identifier), ':')),
       field('var', $.identifier),
       'in',
       field('iterable', $._expression),
       'do',
+      $._layout_start,
       field('body', $._do_seq),
-    ),
+      optional($._layout_end),
+    )),
 
     // ============================================================
     // Delimited Expressions
@@ -573,15 +612,11 @@ module.exports = grammar({
     // ============================================================
 
     // Identifier with optional dot-separated parts: `Foo.Bar.baz`
-    // Using prec.left to avoid ambiguity when identifier appears before `.field`
-    identifier: $ => prec.left(choice(
-      seq($._identifier, repeat(seq(token.immediate('.'), $._identifier))),
-      $._escaped_identifier,
-    )),
+    // Simple identifier without dots - projection handles qualified access
+    identifier: _ => /[_a-zA-Zα-ωΑ-Ωℕℤℚℝℂ∇][_a-zA-Z0-9'α-ωΑ-Ωℕℤℚℝℂ∇?!]*/,
 
-    _identifier: _ => /[_a-zA-Zα-ωΑ-Ωℕℤℚℝℂ∇][_a-zA-Z0-9'α-ωΑ-Ωℕℤℚℝℂ∇?!]*/,
-
-    _escaped_identifier: _ => /«[^»]*»/,
+    // Escaped identifier: `«name with spaces»`
+    escaped_identifier: _ => /«[^»]*»/,
 
     number: _ => choice(
       /\d+/,                    // decimal
