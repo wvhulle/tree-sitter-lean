@@ -518,6 +518,119 @@ def test : IO Unit := do
                 name: (identifier)
                 arguments: (string)))))))
 
+===============================
+Return Dot Error In Let Context
+===============================
+
+def test : IO Unit := do
+  let x := .error "msg"
+  return x
+
+---
+
+(module
+  (declaration
+    (def
+      name: (identifier)
+      type:
+        (apply
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (do
+          (let
+            name: (identifier)
+            value:
+              (apply
+                name: (identifier)
+                arguments: (string)))
+          (do_return
+            value: (identifier))))))
+
+==================================
+Return Dot Error In Assign Context
+==================================
+
+def test : IO Unit := do
+  let mut x := ()
+  x := .error "msg"
+  return ()
+
+---
+
+(module
+  (declaration
+    (def
+      name: (identifier)
+      type:
+        (apply
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (do
+          (let_mut
+            (parameters
+              name: (identifier))
+            value: (parenthesized))
+          (assign
+            name: (identifier)
+            value:
+              (apply
+                name: (identifier)
+                arguments: (string)))
+          (do_return
+            value: (parenthesized))))))
+
+====================================
+Return Dot Error With Identifier Arg
+====================================
+
+def test : IO Unit := do
+  return .error err
+
+---
+
+(module
+  (declaration
+    (def
+      name: (identifier)
+      type:
+        (apply
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (do
+          (do_return
+            value:
+              (apply
+                name: (identifier)
+                arguments: (identifier)))))))
+
+==========================
+Return Dot Error With Proj
+==========================
+
+def test : IO Unit := do
+  return .error state.msg
+
+---
+
+(module
+  (declaration
+    (def
+      name: (identifier)
+      type:
+        (apply
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (do
+          (do_return
+            value:
+              (apply
+                name: (identifier)
+                arguments: (identifier)))))))
+
 ==================================
 Let Bind With Left Arrow (Visible)
 ==================================
@@ -535,17 +648,13 @@ def test : StateM Counter Nat := do
       type:
         (apply
           name: (identifier)
-          arguments:
-            (apply
-              name: (identifier)
-              arguments: (identifier)))
+          arguments: (identifier)
+          arguments: (identifier))
       body:
         (do
           (let_bind
             name: (identifier)
-            (left_arrow)
             value: (identifier))
           (let_bind
             name: (identifier)
-            (left_arrow)
             value: (identifier))))))

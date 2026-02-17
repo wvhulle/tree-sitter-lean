@@ -1,0 +1,63 @@
+id: no-return-error
+snapshots:
+  ? |
+    abbrev MyExcept := ExceptT String IO
+    def example1 : MyExcept Unit := do
+      return .error "failed"
+  : labels:
+    - source: return .error "failed"
+      style: primary
+      start: 74
+      end: 96
+    - source: .error
+      style: secondary
+      start: 81
+      end: 87
+    - source: '"failed"'
+      style: secondary
+      start: 88
+      end: 96
+    - source: .error "failed"
+      style: secondary
+      start: 81
+      end: 96
+  ? |
+    def example2 (e : String) : MyExcept Unit := do
+      return .error e
+  : labels:
+    - source: return .error e
+      style: primary
+      start: 50
+      end: 65
+    - source: .error
+      style: secondary
+      start: 57
+      end: 63
+    - source: e
+      style: secondary
+      start: 64
+      end: 65
+    - source: .error e
+      style: secondary
+      start: 57
+      end: 65
+  ? |
+    def example3 : MyExcept Unit := do
+      return .error .noTreesAvailable
+  : labels:
+    - source: return .error .noTreesAvailable
+      style: primary
+      start: 37
+      end: 68
+    - source: .error
+      style: secondary
+      start: 44
+      end: 50
+    - source: .noTreesAvailable
+      style: secondary
+      start: 51
+      end: 68
+    - source: .error .noTreesAvailable
+      style: secondary
+      start: 44
+      end: 68

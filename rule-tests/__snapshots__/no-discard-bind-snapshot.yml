@@ -1,0 +1,53 @@
+id: no-discard-bind
+snapshots:
+  ? |
+    def bankingScenario : BankM Int := do
+      let _ ← deposit 100
+      let _ ← withdraw 30
+      let _ ← deposit 50
+      let s ← get
+      pure s.balance
+  : fixed: |
+      def bankingScenario : BankM Int := do
+        deposit 100
+        let _ ← withdraw 30
+        let _ ← deposit 50
+        let s ← get
+        pure s.balance
+    labels:
+    - source: let _ ← deposit 100
+      style: primary
+      start: 40
+      end: 61
+  ? |
+    def example1 : BankM Nat := do
+      let _ ← deposit 100
+      let s ← get
+      pure s
+  : fixed: |
+      def example1 : BankM Nat := do
+        deposit 100
+        let s ← get
+        pure s
+    labels:
+    - source: let _ ← deposit 100
+      style: primary
+      start: 33
+      end: 54
+  ? |
+    def example2 : BankM Nat := do
+      let _ ← deposit 100
+      let _ ← withdraw 30
+      let s ← get
+      pure s
+  : fixed: |
+      def example2 : BankM Nat := do
+        deposit 100
+        let _ ← withdraw 30
+        let s ← get
+        pure s
+    labels:
+    - source: let _ ← deposit 100
+      style: primary
+      start: 33
+      end: 54

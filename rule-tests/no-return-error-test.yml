@@ -1,0 +1,31 @@
+id: no-return-error
+valid:
+  - |
+    abbrev MyExcept := ExceptT String IO
+    def example : MyExcept Unit := do
+      throw "failed"
+  - |
+    def example (result : Except String Unit) : MyExcept Unit := do
+      match result with
+      | .error e => throw e
+      | .ok _ => pure ()
+  - |
+    def example : MyExcept Unit := do
+      return ()
+  - |
+    def collectDiags (doc : EditableDocument) : IO DiagnosticsArray := do
+      let interactiveDiags ← doc.diagnosticsRef.get
+      return interactiveDiags.map fun diag =>
+        let info := convertDiagnostic diag
+        (diag.range, info)
+invalid:
+  - |
+    abbrev MyExcept := ExceptT String IO
+    def example1 : MyExcept Unit := do
+      return .error "failed"
+  - |
+    def example2 (e : String) : MyExcept Unit := do
+      return .error e
+  - |
+    def example3 : MyExcept Unit := do
+      return .error .noTreesAvailable

@@ -88,16 +88,25 @@ ast-grep --lang lean --pattern 'def $A := $B' your-file.lean
 
 ## Development
 
-Based on <https://github.com/Julian/lean.nvim>.
+Read [writing the grammar](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html)
 
-Debug using AST-Grep with:
+Use the `tree-sitter` CLI:
+
+```bash
+tree-sitter parse TEST.lean
+```
+
+Add tests for the Tree-Sitter grammar to [./test/corpus](./test/corpus).
+See [writing tests](https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html)
+
+You can also debug using AST-Grep with:
 
 ```bash
 ast-grep run -p <PATTERN> --debug-query ast
 ```
 
-Add tests to [./test/corpus](./test/corpus).
-
 ## License
+
+Based on <https://github.com/Julian/lean.nvim> with better support for parsing the interior of monad `do` blocks.
 
 MIT

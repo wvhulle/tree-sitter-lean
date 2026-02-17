@@ -15,6 +15,10 @@ module.exports = grammar({
     /\s/,
   ],
 
+  externals: $ => [
+    $._newline,
+  ],
+
   conflicts: $ => [
     [$._binder_ident, $._term],
     [$._binder_ident, $.named_argument],
@@ -30,7 +34,10 @@ module.exports = grammar({
     [$.instance_binder, $._term],
     [$.instance_binder, $.list],
     [$.proj, $._expression],
+    [$.proj, $._do_expression],
     [$._where_decls],
+    [$.let, $._do_let],
+    [$._expression, $._do_expression],
   ],
 
   word: $ => $._identifier,
@@ -70,19 +77,37 @@ module.exports = grammar({
       $.unless,
     ),
 
-    let: $ => prec.left(seq(
+    // src/Lean/Parser/Do.lean: doExpr uses notFollowedByRedefinedTermToken
+    // to prevent expression-level `let` from matching in do blocks.
+    // _do_expression mirrors _expression but without $.let.
+    _do_expression: $ => choice(
+      $.apply,
+      $.comparison,
+      $.tactics,
+      $.binary_expression,
+      $.neg,
+      $.quoted_tactic,
+      $.fun,
+      $._term,
+      $.do,
+      $.unless,
+    ),
+
+    // src/Lean/Parser/Term.lean: «let»
+    // "let" >> letConfig >> letDecl >> optSemicolon termParser
+    let: $ => prec.right(seq(
       'let',
       field('name', $.identifier),
       optional(field('parameters', $.parameters)),
       optional(seq(':', field('type', $._expression))),
       ':=',
       field('value', $._expression),
-      choice(/\n/, ';'),
-      optional(field('body', $._expression)),
+      choice($._newline, ';'),
+      field('body', $._expression),
     )),
 
     // Do notation (simplified top-level; full do rules in do.js)
-    _do_seq: $ => prec.right(sep1_($._do_element, /\n/)),
+    _do_seq: $ => prec.right(sep1_($._do_element, $._newline)),
     do: $ => prec.right(seq('do', $._do_seq)),
 
     for_in: $ => seq(
@@ -102,14 +127,14 @@ module.exports = grammar({
     let_mut: $ => seq(
       'let', 'mut',
       $.parameters,
-      choice($.left_arrow, ':='),
+      choice($._left_arrow, ':='),
       field('value', $._expression),
     ),
 
     let_bind: $ => seq(
       'let',
       field('name', $.identifier),
-      $.left_arrow,
+      $._left_arrow,
       field('value', $._expression),
     ),
 

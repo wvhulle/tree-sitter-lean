@@ -1,0 +1,42 @@
+id: no-discard-bind
+valid:
+  - |
+    abbrev BankM := ExceptT String (StateM Nat)
+    def deposit (amount : Nat) : BankM Nat := do
+      let s ← get
+      set (s + amount)
+      pure amount
+  - |
+    def example : BankM Nat := do
+      deposit 100
+      withdraw 30
+      get
+  - |
+    def example : BankM Nat := do
+      let amount ← deposit 100
+      pure amount
+  - |
+    def counterSequence : StateM Counter Nat := do
+      let v1 ← increment
+      let v2 ← double
+      let v3 ← increment
+      pure (v1 + v2 + v3)
+invalid:
+  - |
+    def example1 : BankM Nat := do
+      let _ ← deposit 100
+      let s ← get
+      pure s
+  - |
+    def example2 : BankM Nat := do
+      let _ ← deposit 100
+      let _ ← withdraw 30
+      let s ← get
+      pure s
+  - |
+    def bankingScenario : BankM Int := do
+      let _ ← deposit 100
+      let _ ← withdraw 30
+      let _ ← deposit 50
+      let s ← get
+      pure s.balance

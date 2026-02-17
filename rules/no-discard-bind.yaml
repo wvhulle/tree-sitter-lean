@@ -1,0 +1,8 @@
+id: no-discard-bind
+language: lean
+message: Use plain statement instead of `let _ ← expr`
+severity: info
+note: When you don't need the result of a monadic action, write it as a statement without `let _ ←`
+rule:
+  pattern: let _ ← $EXPR
+fix: $EXPR
