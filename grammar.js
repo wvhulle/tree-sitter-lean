@@ -109,45 +109,23 @@ module.exports = grammar({
     ),
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
-    namespace: $ => seq(
-      'namespace',
-      field('name', $.identifier),
-      repeat(seq(token.immediate('.'), $.identifier)),
-    ),
+    namespace: $ => seq('namespace', field('name', $._name)),
     
     section: $ => seq('section', optional(field('name', $.identifier))),
     
     // End: `end` or `end Foo` or `end Foo.Bar.Baz`
-    end: $ => seq(
-      'end',
-      optional(seq(
-        field('name', $.identifier),
-        repeat(seq(token.immediate('.'), $.identifier)),
-      )),
-    ),
+    end: $ => seq('end', optional(field('name', $._name))),
 
     // Open: `open Foo.Bar` or `open Foo Bar Baz` or `open Foo hiding x` or `open Foo (x y)`
     open: $ => seq(
       'open',
       optional('scoped'),
-      repeat1($._open_namespace),  // Multiple namespaces allowed
+      repeat1(field('namespace', $._name)),
       optional(choice(
-        field('hiding', seq('hiding', repeat1($._open_name))),
-        field('only', seq('(', repeat1($._open_name), ')')),
-        seq('in', $._expression),  // open Foo in expr
+        seq('hiding', repeat1(field('hiding', $._name))),
+        seq('(', repeat1(field('only', $._name)), ')'),
+        seq('in', $._expression),
       )),
-    ),
-
-    // A namespace in open: `Foo` or `Foo.Bar.Baz`
-    _open_namespace: $ => seq(
-      field('namespace', $.identifier),
-      repeat(seq(token.immediate('.'), $.identifier)),
-    ),
-
-    // A name in open hiding/only: `foo` or `Foo.bar.baz`
-    _open_name: $ => seq(
-      $.identifier,
-      repeat(seq(token.immediate('.'), $.identifier)),
     ),
 
     variable: $ => seq('variable', repeat1($._bracketed_binder)),
@@ -159,67 +137,18 @@ module.exports = grammar({
     // ============================================================
 
     _declaration: $ => choice(
-      $.def,
-      $.theorem,
-      $.lemma,
-      $.abbrev,
+      $.definition,
       $.structure,
       $.inductive,
-      $.instance,
     ),
 
-    def: $ => seq(
-      'def',
-      field('name', $.decl_id),
+    // Unified definition rule for def, theorem, lemma, abbrev, instance
+    // All share the same structure: keyword name binders? type? := body
+    definition: $ => seq(
+      field('kind', choice('def', 'theorem', 'lemma', 'abbrev', 'instance')),
+      field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
-      ':=',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
-    ),
-
-    // Declaration identifier: `foo` or `Foo.bar.baz` (used for def, theorem, etc.)
-    decl_id: $ => sep1($.identifier, token.immediate('.')),
-
-    theorem: $ => seq(
-      'theorem',
-      field('name', $.decl_id),
-      optional(field('binders', $.binders)),
-      $._type_spec,
-      ':=',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
-    ),
-
-    lemma: $ => seq(
-      'lemma',
-      field('name', $.decl_id),
-      optional(field('binders', $.binders)),
-      $._type_spec,
-      ':=',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
-    ),
-
-    abbrev: $ => seq(
-      'abbrev',
-      field('name', $.decl_id),
-      optional(field('binders', $.binders)),
-      optional($._type_spec),
-      ':=',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
-    ),
-
-    instance: $ => seq(
-      'instance',
-      optional(field('name', $.identifier)),
-      optional(field('binders', $.binders)),
-      $._type_spec,
       ':=',
       $._layout_start,
       field('body', $._expression),
@@ -365,6 +294,9 @@ module.exports = grammar({
       ']',
       optional(field('modifier', choice('!', '?'))),
     )),
+
+    // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
+    _name: $ => sep1($.identifier, token.immediate('.')),
 
     // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
     projection: $ => prec.left(PREC.proj, seq(
