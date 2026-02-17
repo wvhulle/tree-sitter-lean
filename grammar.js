@@ -144,7 +144,9 @@ module.exports = grammar({
       optional(field('binders', $.binders)),
       optional($._type_spec),
       ':=',
+      $._layout_start,
       field('body', $._expression),
+      optional($._layout_end),
     ),
 
     theorem: $ => seq(
@@ -153,7 +155,9 @@ module.exports = grammar({
       optional(field('binders', $.binders)),
       $._type_spec,
       ':=',
+      $._layout_start,
       field('body', $._expression),
+      optional($._layout_end),
     ),
 
     lemma: $ => seq(
@@ -162,7 +166,9 @@ module.exports = grammar({
       optional(field('binders', $.binders)),
       $._type_spec,
       ':=',
+      $._layout_start,
       field('body', $._expression),
+      optional($._layout_end),
     ),
 
     abbrev: $ => seq(
@@ -171,7 +177,9 @@ module.exports = grammar({
       optional(field('binders', $.binders)),
       optional($._type_spec),
       ':=',
+      $._layout_start,
       field('body', $._expression),
+      optional($._layout_end),
     ),
 
     instance: $ => seq(
@@ -180,7 +188,9 @@ module.exports = grammar({
       optional(field('binders', $.binders)),
       $._type_spec,
       ':=',
+      $._layout_start,
       field('body', $._expression),
+      optional($._layout_end),
     ),
 
     structure: $ => seq(
@@ -364,14 +374,17 @@ module.exports = grammar({
     )),
 
     // Let binding: `let x := e` in do-blocks, or `let x := e; body` in expressions
-    // Body is optional - in do-blocks the continuation is the next do element
+    // Body is separated by `;` or layout semicolon (newline at same indent)
     let: $ => prec.right(seq(
       'let',
       field('pattern', $._pattern),
       optional($._type_spec),
       ':=',
       field('value', $._expression),
-      optional(seq(';', field('body', $._expression))),
+      optional(seq(
+        choice(';', $._layout_semicolon),
+        field('body', $._expression),
+      )),
     )),
 
     // If expression: `if cond then t else e`

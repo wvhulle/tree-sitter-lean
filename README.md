@@ -94,12 +94,13 @@ ast-grep --lang lean --pattern 'def $A := $B' your-file.lean
 
 ## Development
 
-Read [writing the grammar](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html)
+Read [writing the grammar](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html). Be careful of adding too many conflicts in the grammar as they cause exponential growth of the state space.
 
 Use the `tree-sitter` CLI:
 
 ```bash
-tree-sitter parse TEST.lean
+tree-sitter generate # Re-run this after every grammar rule change
+tree-sitter parse Test.lean # A long Lean file that needs to be parsed correctly
 ```
 
 Add tests for the Tree-Sitter grammar to [./test/corpus](./test/corpus).
