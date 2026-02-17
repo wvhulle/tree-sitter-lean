@@ -66,6 +66,12 @@ This is the recommended approach for reproducible builds.
 
 See [`nixpkgs` tree-sitter documentation](https://nixos.org/manual/nixpkgs/stable/#tree-sitter) for more Tree-Sitter with Nix examples.
 
+Push build cache to public cache server:
+
+```bash
+nix build . --print-out-paths | cachix push wvhulle
+```
+
 ### AST-Grep
 
 [AST-Grep](https://ast-grep.github.io/reference/sgconfig.html) is a tool for quick large refactors. To set it up to use this Lean grammar, add to your `flake.nix`:

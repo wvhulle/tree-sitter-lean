@@ -1,6 +1,10 @@
 {
   description = "Tree-sitter grammar for Lean 4";
 
+  nixConfig = {
+    extra-substituters = [ "https://wvhulle.cachix.org" ];
+    extra-trusted-public-keys = [ "wvhulle.cachix.org-1:heXx8DZMiRsKUx6l1TxNoF+Nmtmz66QEdsonQzc1ir0=" ];
+  };
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
