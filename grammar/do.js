@@ -7,21 +7,9 @@ module.exports = {
   rules: {
     _left_arrow: $ => choice('<-', '←'),
 
-    // src/Lean/Parser/Do.lean: doExpr uses notFollowedByRedefinedTermToken
-    // to prevent expression-level `let` from matching in do blocks.
-    // _do_expression mirrors _expression but without $.let.
-    _do_expression: $ => choice(
-      $.apply,
-      $.comparison,
-      $.tactics,
-      $.binary_expression,
-      $.neg,
-      $.quoted_tactic,
-      $.fun,
-      $._term,
-      $.do,
-      $.unless,
-    ),
+    // Note: We use _expression directly instead of a separate _do_expression.
+    // The key difference in do-blocks is that `let` without a body is allowed.
+    // We handle this by giving _do_let higher precedence in _do_element.
 
     _do_seq: $ => prec.right(sep1_($._do_element, $._newline)),
     do: $ => prec.right(seq('do', $._do_seq)),
@@ -79,7 +67,9 @@ module.exports = {
     // src/Lean/Parser/Do.lean: doLet
     // Unlike expression-level `let`, doLet does NOT consume a body.
     // Aliased as $.let for backward-compatible AST node names.
-    _do_let: $ => prec.dynamic(1, seq(
+    // Using prec.left with lower precedence than subarray (PREC.max=1024) so that
+    // `let x := arr[0]` parses the subarray as part of the expression, not as a new element.
+    _do_let: $ => prec.left(PREC.lead, seq(
       'let',
       field('name', $.identifier),
       optional(field('parameters', $.parameters)),
@@ -88,6 +78,8 @@ module.exports = {
       field('value', $._expression),
     )),
 
+    // Do-block elements. Order matters for precedence when using choice().
+    // _do_let has high precedence to be preferred over expression-level let.
     _do_element: $ => choice(
       alias($._do_let, $.let),
       $.assign,
@@ -96,7 +88,7 @@ module.exports = {
       $.let_bind,
       $.let_mut,
       $.do_return,
-      $._do_expression,
+      $._expression,  // Use _expression directly instead of _do_expression
     ),
   },
 }
