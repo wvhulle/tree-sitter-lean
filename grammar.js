@@ -170,7 +170,7 @@ module.exports = grammar({
 
     def: $ => seq(
       'def',
-      field('name', $.identifier),
+      field('name', $.decl_id),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       ':=',
@@ -179,9 +179,12 @@ module.exports = grammar({
       optional($._layout_end),
     ),
 
+    // Declaration identifier: `foo` or `Foo.bar.baz` (used for def, theorem, etc.)
+    decl_id: $ => sep1($.identifier, token.immediate('.')),
+
     theorem: $ => seq(
       'theorem',
-      field('name', $.identifier),
+      field('name', $.decl_id),
       optional(field('binders', $.binders)),
       $._type_spec,
       ':=',
@@ -192,7 +195,7 @@ module.exports = grammar({
 
     lemma: $ => seq(
       'lemma',
-      field('name', $.identifier),
+      field('name', $.decl_id),
       optional(field('binders', $.binders)),
       $._type_spec,
       ':=',
@@ -203,7 +206,7 @@ module.exports = grammar({
 
     abbrev: $ => seq(
       'abbrev',
-      field('name', $.identifier),
+      field('name', $.decl_id),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       ':=',
@@ -341,9 +344,17 @@ module.exports = grammar({
 
     // Function application: `f x y z`
     // Uses prec.left to parse `f x y` as `(f x) y`
+    // Argument can be an atom (normal case) or a trailing block expression (fun, if, match)
+    // Note: `do` is not included because it conflicts with for_in body parsing
     application: $ => prec.left(PREC.app, seq(
       field('function', $._expression),
-      field('argument', $._atom),
+      field('argument', choice(
+        $._atom,
+        $.fun,    // trailing: f fun x => e
+        $.if,     // trailing: f if c then a else b
+        $.if_let, // trailing: f if let p := e then a else b
+        $.match,  // trailing: f match x with | ...
+      )),
     )),
 
     // Array/list subscript: `arr[i]` or `arr[i]!` or `arr[i]?`
@@ -401,12 +412,15 @@ module.exports = grammar({
       field('operand', $._expression),
     )),
 
-    // Lambda: `fun x => e` or `fun (x : T) => e`
+    // Lambda: `fun x => e` or `fun (x : T) => e` or `fun (a, b) => e`
+    // Body gets layout context so `let` bindings work properly
     fun: $ => prec.right(seq(
       choice('fun', 'λ'),
-      field('binders', repeat1(choice($.identifier, $._bracketed_binder))),
+      field('binders', repeat1(choice($._pattern, $._bracketed_binder))),
       '=>',
+      $._layout_start,
       field('body', $._expression),
+      optional($._layout_end),
     )),
 
     // Universal quantifier: `∀ x, P x`
