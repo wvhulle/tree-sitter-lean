@@ -1,49 +1,44 @@
 /**
  * External scanner for Lean 4 tree-sitter grammar.
- * Handles layout/indentation-sensitive parsing similar to Haskell.
+ * Handles layout/indentation-sensitive parsing.
  *
- * Lean uses indentation to delimit:
- * - do blocks: `do\n  stmt1\n  stmt2`
- * - where clauses
- * - structure fields
- * - tactic blocks
+ * Lean uses indentation to delimit blocks after `do`, `where`, `:=`, `=>`.
+ * The scanner maintains a stack of indent levels and emits:
+ *   LAYOUT_START     — pushed when grammar enters a layout context
+ *   LAYOUT_SEMICOLON — same-indent newline within a layout block
+ *   LAYOUT_END       — indent decreased below current layout level
  *
- * The scanner maintains a stack of layout contexts, each recording the
- * indentation level. When a newline is encountered, we check if the next
- * line's indentation is:
- * - Greater: continue current block (no token)
- * - Equal: emit semicolon (new statement in same block)
- * - Less: end current layout block
+ * Key design: a `queued_indent` field persists across scanner calls so that
+ * a single newline can produce multiple LAYOUT_END tokens (one per popped
+ * level) followed by a LAYOUT_SEMICOLON, across successive scanner invocations.
  */
 
 #include "tree_sitter/parser.h"
 #include "tree_sitter/alloc.h"
 #include <string.h>
 
-// Token types matching externals in grammar.js (ORDER MATTERS!)
 enum TokenType {
-  LAYOUT_START,       // 0: Start a new layout block (after `do`, `where`, etc.)
-  LAYOUT_SEMICOLON,   // 1: Virtual semicolon between elements at same indent
-  LAYOUT_END,         // 2: End of layout block (indent decreased)
+  LAYOUT_START,
+  LAYOUT_SEMICOLON,
+  LAYOUT_END,
 };
 
-// Maximum nesting depth for layout contexts
-#define MAX_LAYOUT_DEPTH 64
+#define MAX_DEPTH 64
+#define NO_QUEUED UINT32_MAX
 
-// Scanner state persisted across parse calls
 typedef struct {
-  uint32_t indents[MAX_LAYOUT_DEPTH];
-  uint8_t depth;
+  uint32_t indents[MAX_DEPTH];
+  uint8_t  depth;
+  uint32_t queued_indent; // indent of next non-blank line, or NO_QUEUED
 } Scanner;
 
-// ============================================================
-// Scanner lifecycle
-// ============================================================
+/* ── lifecycle ─────────────────────────────────────────────────── */
 
-void *tree_sitter_lean_external_scanner_create() {
-  Scanner *scanner = ts_calloc(1, sizeof(Scanner));
-  scanner->depth = 0;
-  return scanner;
+void *tree_sitter_lean_external_scanner_create(void) {
+  Scanner *s = ts_calloc(1, sizeof(Scanner));
+  s->depth = 0;
+  s->queued_indent = NO_QUEUED;
+  return s;
 }
 
 void tree_sitter_lean_external_scanner_destroy(void *payload) {
@@ -51,133 +46,158 @@ void tree_sitter_lean_external_scanner_destroy(void *payload) {
 }
 
 unsigned tree_sitter_lean_external_scanner_serialize(void *payload, char *buffer) {
-  Scanner *scanner = (Scanner *)payload;
-  size_t size = sizeof(scanner->depth) + scanner->depth * sizeof(uint32_t);
-  if (size > TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
-    return 0;
-  }
-  memcpy(buffer, &scanner->depth, sizeof(scanner->depth));
-  memcpy(buffer + sizeof(scanner->depth), scanner->indents, scanner->depth * sizeof(uint32_t));
-  return size;
+  Scanner *s = (Scanner *)payload;
+  unsigned pos = 0;
+  memcpy(buffer + pos, &s->depth, sizeof(s->depth));       pos += sizeof(s->depth);
+  memcpy(buffer + pos, &s->queued_indent, sizeof(s->queued_indent)); pos += sizeof(s->queued_indent);
+  unsigned indent_bytes = s->depth * sizeof(uint32_t);
+  memcpy(buffer + pos, s->indents, indent_bytes);           pos += indent_bytes;
+  return pos;
 }
 
 void tree_sitter_lean_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
-  Scanner *scanner = (Scanner *)payload;
+  Scanner *s = (Scanner *)payload;
   if (length == 0) {
-    scanner->depth = 0;
+    s->depth = 0;
+    s->queued_indent = NO_QUEUED;
     return;
   }
-  memcpy(&scanner->depth, buffer, sizeof(scanner->depth));
-  if (scanner->depth > MAX_LAYOUT_DEPTH) {
-    scanner->depth = 0;
-    return;
-  }
-  memcpy(scanner->indents, buffer + sizeof(scanner->depth), scanner->depth * sizeof(uint32_t));
+  unsigned pos = 0;
+  memcpy(&s->depth, buffer + pos, sizeof(s->depth));        pos += sizeof(s->depth);
+  memcpy(&s->queued_indent, buffer + pos, sizeof(s->queued_indent)); pos += sizeof(s->queued_indent);
+  if (s->depth > MAX_DEPTH) { s->depth = 0; s->queued_indent = NO_QUEUED; return; }
+  memcpy(s->indents, buffer + pos, s->depth * sizeof(uint32_t));
 }
 
-// ============================================================
-// Helper functions
-// ============================================================
+/* ── helpers ───────────────────────────────────────────────────── */
 
-static void skip_whitespace_sameline(TSLexer *lexer) {
-  while (lexer->lookahead == ' ' || lexer->lookahead == '\t') {
+static inline uint32_t top_indent(Scanner *s) {
+  return s->depth > 0 ? s->indents[s->depth - 1] : 0;
+}
+
+static inline void push(Scanner *s, uint32_t indent) {
+  if (s->depth < MAX_DEPTH) {
+    s->indents[s->depth++] = indent;
+  }
+}
+
+static inline void pop(Scanner *s) {
+  if (s->depth > 0) s->depth--;
+}
+
+static void skip_spaces(TSLexer *lexer) {
+  while (lexer->lookahead == ' ' || lexer->lookahead == '\t')
     lexer->advance(lexer, true);
+}
+
+static bool is_nl(int32_t c) { return c == '\n' || c == '\r'; }
+
+/**
+ * Skip newlines + leading whitespace, return column of first non-blank char.
+ * If EOF is reached, return 0 (dedent everything).
+ */
+static uint32_t measure_indent(TSLexer *lexer) {
+  while (is_nl(lexer->lookahead))
+    lexer->advance(lexer, true);
+  skip_spaces(lexer);
+  if (lexer->eof(lexer)) return 0;
+  return lexer->get_column(lexer);
+}
+
+/* ── main scan ─────────────────────────────────────────────────── */
+
+bool tree_sitter_lean_external_scanner_scan(
+    void *payload, TSLexer *lexer, const bool *valid_symbols) {
+
+  Scanner *s = (Scanner *)payload;
+
+  /* 0. Error recovery: if all three symbols are valid simultaneously
+        the parser is in error recovery mode — don't interfere. */
+  if (valid_symbols[LAYOUT_START] &&
+      valid_symbols[LAYOUT_SEMICOLON] &&
+      valid_symbols[LAYOUT_END]) {
+    return false;
   }
-}
 
-static bool is_newline(int32_t c) {
-  return c == '\n' || c == '\r';
-}
-
-static void push_indent(Scanner *scanner, uint32_t indent) {
-  if (scanner->depth < MAX_LAYOUT_DEPTH) {
-    scanner->indents[scanner->depth] = indent;
-    scanner->depth++;
-  }
-}
-
-static void pop_indent(Scanner *scanner) {
-  if (scanner->depth > 0) {
-    scanner->depth--;
-  }
-}
-
-static uint32_t current_indent(Scanner *scanner) {
-  if (scanner->depth > 0) {
-    return scanner->indents[scanner->depth - 1];
-  }
-  return 0;
-}
-
-static bool in_layout(Scanner *scanner) {
-  return scanner->depth > 0;
-}
-
-// ============================================================
-// Main scanner function
-// ============================================================
-
-bool tree_sitter_lean_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
-  Scanner *scanner = (Scanner *)payload;
-
-  // First, skip any whitespace on the current line
-  skip_whitespace_sameline(lexer);
-
-  // LAYOUT_START: Grammar requests to start a layout block
-  // This happens right after `do`, `where`, etc.
+  /* 1. LAYOUT_START — grammar just saw `do`, `where`, `:=`, `=>`
+        and wants to open a new layout block. */
   if (valid_symbols[LAYOUT_START]) {
-    // Skip newlines and whitespace to find the first element
-    while (is_newline(lexer->lookahead)) {
-      lexer->advance(lexer, true);
+    // Skip to the first token of the new block.
+    skip_spaces(lexer);
+    if (is_nl(lexer->lookahead)) {
+      // Block starts on next line — measure its indent.
+      uint32_t indent = measure_indent(lexer);
+      push(s, indent);
+    } else {
+      // Same-line block: `do return 0`
+      push(s, lexer->get_column(lexer));
     }
-    skip_whitespace_sameline(lexer);
-    
-    // Record the indent of the first element
-    uint32_t indent = lexer->get_column(lexer);
-    push_indent(scanner, indent);
+    // Drain any queued indent from a previous newline.
+    s->queued_indent = NO_QUEUED;
     lexer->result_symbol = LAYOUT_START;
     return true;
   }
 
-  // Handle newlines - this is where layout decisions are made
-  if (is_newline(lexer->lookahead)) {
-    // Mark the end before skipping
-    lexer->mark_end(lexer);
-    
-    // Skip the newline(s) and following whitespace
-    while (is_newline(lexer->lookahead)) {
-      lexer->advance(lexer, true);
+  /* 2. Process queued indent from a previous newline.
+        Each call pops at most one layout level (LAYOUT_END) or emits
+        LAYOUT_SEMICOLON, then returns so tree-sitter can re-enter. */
+  if (s->queued_indent != NO_QUEUED && s->depth > 0) {
+    uint32_t qi = s->queued_indent;
+    uint32_t ci = top_indent(s);
+
+    if (qi < ci && valid_symbols[LAYOUT_END]) {
+      pop(s);
+      lexer->result_symbol = LAYOUT_END;
+      // Keep queued_indent — next call will check the new top.
+      return true;
     }
-    skip_whitespace_sameline(lexer);
-
-    // Get the column of the next token
-    uint32_t next_indent = lexer->get_column(lexer);
-
-    // If we're in a layout context, make layout decisions
-    if (in_layout(scanner)) {
-      uint32_t layout_indent = current_indent(scanner);
-
-      // Indent decreased: end the layout block
-      if (next_indent < layout_indent && valid_symbols[LAYOUT_END]) {
-        pop_indent(scanner);
-        lexer->result_symbol = LAYOUT_END;
-        return true;
-      }
-      
-      // Same indent: emit virtual semicolon to separate elements
-      if (next_indent == layout_indent && valid_symbols[LAYOUT_SEMICOLON]) {
-        lexer->result_symbol = LAYOUT_SEMICOLON;
-        return true;
-      }
+    if (qi == ci && valid_symbols[LAYOUT_SEMICOLON]) {
+      s->queued_indent = NO_QUEUED;
+      lexer->result_symbol = LAYOUT_SEMICOLON;
+      return true;
     }
+    // qi > ci (continuation line) or token not valid — clear and fall through.
+    s->queued_indent = NO_QUEUED;
   }
 
-  // LAYOUT_END can also be triggered by certain closing tokens
-  if (valid_symbols[LAYOUT_END] && in_layout(scanner)) {
+  /* 3. Skip horizontal whitespace before inspecting the character. */
+  skip_spaces(lexer);
+
+  /* 4. Newline — measure indent of next line and start processing. */
+  if (is_nl(lexer->lookahead) && s->depth > 0) {
+    // Mark end *before* consuming newlines so the resulting token is zero-width.
+    lexer->mark_end(lexer);
+    uint32_t next = measure_indent(lexer);
+    uint32_t ci   = top_indent(s);
+
+    if (next < ci && valid_symbols[LAYOUT_END]) {
+      pop(s);
+      s->queued_indent = next; // remember for subsequent calls
+      lexer->result_symbol = LAYOUT_END;
+      return true;
+    }
+    if (next == ci && valid_symbols[LAYOUT_SEMICOLON]) {
+      s->queued_indent = NO_QUEUED;
+      lexer->result_symbol = LAYOUT_SEMICOLON;
+      return true;
+    }
+    // Greater indent → continuation, no layout token.
+    return false;
+  }
+
+  /* 5. EOF while in layout — emit LAYOUT_END to close all open blocks. */
+  if (lexer->eof(lexer) && s->depth > 0 && valid_symbols[LAYOUT_END]) {
+    pop(s);
+    lexer->result_symbol = LAYOUT_END;
+    return true;
+  }
+
+  /* 6. Closing bracket/paren/brace — force-close one layout level.
+        This handles cases like `(Id.run do ...) + 1`. */
+  if (valid_symbols[LAYOUT_END] && s->depth > 0) {
     int32_t c = lexer->lookahead;
-    // Closing brackets/parens end layout
     if (c == ')' || c == ']' || c == '}') {
-      pop_indent(scanner);
+      pop(s);
       lexer->result_symbol = LAYOUT_END;
       return true;
     }

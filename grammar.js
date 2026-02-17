@@ -281,6 +281,7 @@ module.exports = grammar({
         $.if,
         $.if_let,
         $.match,
+        $.do,
       )),
     )),
 
@@ -458,13 +459,28 @@ module.exports = grammar({
     )),
 
     _do_element: $ => choice(
+      $.do_let,
       $.let_bind,
       $.let_mut,
       $.reassign,
       $.do_return,
       $.for_in,
+      $.do_while,
+      $.do_if,
+      $.do_if_let,
+      $.do_match,
       $._expression,
     ),
+
+    // Let in do-block: `let x := e` without consuming the body
+    // (the do-sequencing handles the body via _layout_semicolon)
+    do_let: $ => prec(1, seq(
+      'let',
+      field('pattern', $._pattern),
+      optional($._type_spec),
+      ':=',
+      field('value', $._expression),
+    )),
 
     // Monadic bind: `let x ← e`
     let_bind: $ => seq(
@@ -484,8 +500,11 @@ module.exports = grammar({
       field('value', $._expression),
     ),
 
-    // Reassignment: `x := e` (higher precedence to prefer over identifier as expression)
-    reassign: $ => prec(PREC.app + 1, seq(
+    // Reassignment: `x := e`
+    // Low precedence so binary operators (+, *, etc.) shift into the value expression
+    // rather than reducing the reassign early. The `:=` token already disambiguates
+    // reassign from a bare expression in _do_element.
+    reassign: $ => prec.right(1, seq(
       field('name', $.identifier),
       ':=',
       field('value', $._expression),
@@ -496,18 +515,79 @@ module.exports = grammar({
     // Return should consume its value expression
     do_return: $ => prec.right(seq('return', optional(field('value', $._expression)))),
 
-    // For loop: `for x in xs do ...` or `for h : x in xs do ...`
-    // Body is a do-block (nested do) with its own layout
-    for_in: $ => prec.right(seq(
+    // For loop: `for x in xs do body`
+    // The `do` at the end starts a full do-block with its own layout.
+    for_in: $ => prec.right(1, seq(
       'for',
       optional(seq(field('bound', $.identifier), ':')),
       field('var', $.identifier),
       'in',
       field('iterable', $._expression),
-      'do',
+      field('body', $.do),
+    )),
+
+    // If in do-block: branches are do-sequences (can contain reassignment etc.)
+    do_if: $ => prec.right(1, seq(
+      'if',
+      optional(seq(field('hyp', $.identifier), ':')),
+      field('condition', $._expression),
+      'then',
+      $._layout_start,
+      field('then', $._do_seq),
+      optional($._layout_end),
+      optional(seq(
+        'else',
+        $._layout_start,
+        field('else', $._do_seq),
+        optional($._layout_end),
+      )),
+    )),
+
+    // If-let in do-block: `if let some x := e then ...`
+    do_if_let: $ => prec.right(1, seq(
+      'if',
+      'let',
+      field('pattern', $._pattern),
+      choice(':=', '<-', '←'),
+      field('value', $._expression),
+      'then',
+      $._layout_start,
+      field('then', $._do_seq),
+      optional($._layout_end),
+      optional(seq(
+        'else',
+        $._layout_start,
+        field('else', $._do_seq),
+        optional($._layout_end),
+      )),
+    )),
+
+    // Match in do-block: whole match gets a layout, arms delimited by `|`.
+    // Each arm's body is a _do_seq (can contain reassignment, if-let, etc.)
+    do_match: $ => prec.left(1, seq(
+      'match',
+      field('scrutinees', commaSep1($._expression)),
+      'with',
+      $._layout_start,
+      repeat1($.do_match_arm),
+      optional($._layout_end),
+    )),
+
+    do_match_arm: $ => prec.right(seq(
+      optional($._layout_semicolon),
+      '|',
+      field('patterns', commaSep1($._expression)),
+      '=>',
       $._layout_start,
       field('body', $._do_seq),
       optional($._layout_end),
+    )),
+
+    // While loop in do-block: `while cond do body`
+    do_while: $ => prec.right(1, seq(
+      'while',
+      field('condition', $._expression),
+      field('body', $.do),
     )),
 
     // ============================================================
