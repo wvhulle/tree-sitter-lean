@@ -146,6 +146,7 @@ module.exports = grammar({
     notation: $ => seq(
       choice('notation', 'macro_rules', 'syntax', 'macro', 'elab',
              'prefix', 'infix', 'infixl', 'infixr', 'postfix'),
+      optional(seq(':', $.number)),  // priority
       repeat(choice($._expression, '=>', ':=')),
     ),
 
@@ -177,16 +178,16 @@ module.exports = grammar({
     ),
 
     // Unified definition rule for def, theorem, lemma, abbrev, instance
-    // All share the same structure: keyword name binders? type? := body
+    // Supports both `:= body` and pattern-matching `| pat => body` syntax.
     definition: $ => seq(
       field('kind', choice('def', 'theorem', 'lemma', 'abbrev', 'instance')),
       field('name', $.name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
-      ':=',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
+      choice(
+        seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
+        repeat1($.match_arm),
+      ),
     ),
 
     structure: $ => seq(
@@ -275,7 +276,7 @@ module.exports = grammar({
       $.subscript,
       $.binary_expression,
       $.unary_expression,
-      $.postfix_expression,
+      // postfix ! and ? are handled by subscript modifier and notation
       $.projection,
       $.arrow,
       $.fun,
@@ -364,8 +365,8 @@ module.exports = grammar({
         [PREC.add, choice('+', '-', '++', '∪', '∩')],
         [PREC.mul, choice('*', '/', '%', '∘')],
         [PREC.product, '×'],
-        // Pipeline / sequencing operators
-        [PREC.arrow, choice('|>', '<|', '|>.', '$', '<;>', '<;')],
+        // Pipeline operators
+        [PREC.arrow, choice('|>', '<|', '|>.', '$')],
       ];
 
       return choice(...table.map(([precedence, operator]) =>
@@ -383,11 +384,9 @@ module.exports = grammar({
       field('operand', $._expression),
     )),
 
-    // Postfix operators: `n!`, `decide?`, `x?`
-    postfix_expression: $ => prec(PREC.proj, seq(
-      field('operand', $._expression),
-      field('operator', token.immediate(choice('!', '?'))),
-    )),
+    // Note: postfix `!` and `?` are handled by:
+    // - subscript modifier: `arr[i]!`, `arr[i]?`
+    // - notation system: `n !` (user-defined, parsed as application)
 
     // Lambda: `fun x => e` or `fun (x : T) => e` or `fun (a, b) => e`
     // Body gets layout context so `let` bindings work properly
@@ -443,10 +442,11 @@ module.exports = grammar({
       optional($._layout_end),
     )),
 
+    // Tactics separated by `;`, `<;>` (broadcast), or newlines
     _tactic_seq: $ => prec.right(seq(
       $._tactic,
       repeat(seq(
-        choice($._layout_semicolon, ';'),
+        choice($._layout_semicolon, ';', '<;>', '<;'),
         $._tactic,
       )),
     )),

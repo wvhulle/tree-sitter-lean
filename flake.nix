@@ -30,7 +30,7 @@
         let
           grammar = pkgs.tree-sitter.buildGrammar {
             language = "lean";
-            version = "0.1.0";
+            version = "0.1.1";
             src = pkgs.lib.cleanSource ./.;
             generate = true;
             postInstall = ''
