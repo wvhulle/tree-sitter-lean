@@ -117,7 +117,14 @@ module.exports = grammar({
     
     section: $ => seq('section', optional(field('name', $.identifier))),
     
-    end: $ => seq('end', optional(field('name', $.identifier))),
+    // End: `end` or `end Foo` or `end Foo.Bar.Baz`
+    end: $ => seq(
+      'end',
+      optional(seq(
+        field('name', $.identifier),
+        repeat(seq(token.immediate('.'), $.identifier)),
+      )),
+    ),
 
     // Open: `open Foo.Bar` or `open Foo Bar Baz` or `open Foo hiding x` or `open Foo (x y)`
     open: $ => seq(
@@ -651,7 +658,8 @@ module.exports = grammar({
 
     char: _ => seq("'", choice(/[^'\\]/, /\\./), "'"),
 
-    hole: _ => '_',
+    // Hole/placeholder: `_` or `·` (cdot, for anonymous functions)
+    hole: _ => choice('_', '·'),
     sorry: _ => 'sorry',
 
     _boolean: $ => choice($.true, $.false),
