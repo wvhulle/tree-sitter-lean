@@ -14,9 +14,24 @@ This project contains:
 
 ### Rust
 
-Add this crate as a normal dependency in your `Cargo.toml` file. The binary Lean parser is automatically compiled Cargo if it is missing. If it is missing, you will need these binaries for compilation with Cargo:
+Add this crate as a normal dependency in your `Cargo.toml` file.
+
+```bash
+cargo add tree-sitter-lean4
+```
+
+The binary Lean parser is automatically compiled Cargo if it is missing. If it is missing, you will need these binaries for compilation with Cargo:
 
 - `tree-sitter` CLI tool for generating Tree-Sitter parsers
+
+Then instantiate the parser:
+
+```rust
+use tree_sitter::{InputEdit, Language, Parser, Point};
+
+let mut parser = Parser::new();
+parser.set_language(&tree_sitter_lean4::LANGUAGE.into()).expect("Error loading Rust grammar");
+```
 
 See [Tree-Sitter-Rust](https://github.com/tree-sitter/tree-sitter/tree/master/lib/binding_rust).
 
@@ -74,12 +89,6 @@ ast-grep --lang lean --pattern 'def $A := $B' your-file.lean
 ## Development
 
 Based on <https://github.com/Julian/lean.nvim>.
-
-Publish to Crates.io with:
-
-```bash
-cargo publish --allow-dirty
-```
 
 Debug using AST-Grep with:
 

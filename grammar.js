@@ -15,10 +15,6 @@ module.exports = grammar({
     /\s/,
   ],
 
-  externals: $ => [
-    $._newline,
-  ],
-
   conflicts: $ => [
     [$._binder_ident, $._term],
     [$._binder_ident, $.named_argument],
@@ -81,12 +77,12 @@ module.exports = grammar({
       optional(seq(':', field('type', $._expression))),
       ':=',
       field('value', $._expression),
-      choice($._newline, ';'),
+      choice(/\n/, ';'),
       optional(field('body', $._expression)),
     )),
 
     // Do notation (simplified top-level; full do rules in do.js)
-    _do_seq: $ => prec.right(sep1_($._do_element, $._newline)),
+    _do_seq: $ => prec.right(sep1_($._do_element, /\n/)),
     do: $ => prec.right(seq('do', $._do_seq)),
 
     for_in: $ => seq(

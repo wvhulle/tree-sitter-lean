@@ -2,7 +2,7 @@ const PREC = require('./constants.js')
 
 module.exports = {
   tactics: $ => prec.left(
-    seq('by', sep1_($._tactic, seq(optional(';'), $._newline))),
+    seq('by', sep1_($._tactic, seq(optional(';'), /\n/))),
   ),
 
   // Core tactics with arguments
