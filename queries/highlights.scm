@@ -69,19 +69,25 @@
 (forall
   binders: (identifier) @variable.parameter)
 
+(exists
+  binders: (identifier) @variable.parameter)
+
 (for_in
   var: (identifier) @variable.parameter)
 
 (for_in
   bound: (identifier) @variable.parameter)
 
-; ── Let / mut / bind ─────────────────────────────────────────
+; ── Let / have / mut / bind ──────────────────────────────────
 
 (let
   pattern: (identifier) @variable)
 
 (do_let
   pattern: (identifier) @variable)
+
+(have
+  name: (identifier) @variable)
 
 (let_mut
   name: (identifier) @variable)
@@ -96,6 +102,32 @@
 
 (field_assignment
   name: (identifier) @variable.other.member)
+
+; ── Tactics ──────────────────────────────────────────────────
+
+(tactic_apply
+  tactic: (identifier) @function.builtin)
+
+(tactic_have
+  name: (identifier) @variable)
+
+(tactic_let
+  pattern: (identifier) @variable)
+
+(tactic_case
+  "case" @keyword)
+
+(tactic_case
+  "next" @keyword)
+
+(tactic_rewrite
+  "rw" @function.builtin)
+
+(tactic_rewrite
+  "rewrite" @function.builtin)
+
+(hash_command
+  command: (hash_ident) @keyword.directive)
 
 ; ── Types ────────────────────────────────────────────────────
 
@@ -116,6 +148,8 @@
   "section"
   "namespace"
   "end"
+  "example"
+  "attribute"
 ] @keyword
 
 (prelude) @keyword
@@ -132,10 +166,13 @@
 [
   "let"
   "mut"
+  "have"
   "fun"
   "λ"
   "forall"
   "∀"
+  "exists"
+  "∃"
   "where"
 ] @keyword
 
@@ -157,6 +194,14 @@
   "with"
 ] @keyword.control.conditional
 
+[
+  "by"
+  "show"
+  "calc"
+  "obtain"
+  "suffices"
+] @keyword
+
 "return" @keyword.control.return
 
 (sorry) @keyword.control
@@ -166,14 +211,15 @@
 [
   "!"  "¬"
   "+"  "-"  "*"  "/"  "%"
-  "++"
+  "++"  "∘"
   "::"
-  "×"
+  "×"  "∪"  "∩"
   "&&"  "∧"
   "||"  "∨"
-  "=="  "!="
+  "="  "=="  "!="  "≠"  "∣"
   "<"  ">"  "<="  ">="  "≤"  "≥"
   "|>"  "<|"  "|>."  "$"
+  "<;>"  "<;"
   "->"  "→"
   "<-"  "←"
   ":="

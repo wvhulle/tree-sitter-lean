@@ -105,6 +105,10 @@ module.exports = grammar({
       $.open,
       $.variable,
       $.universe,
+      $.attribute,
+      $.notation,
+      $.hash_command,
+      $.example,
     ),
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
@@ -130,6 +134,37 @@ module.exports = grammar({
     variable: $ => seq('variable', repeat1($._bracketed_binder)),
 
     universe: $ => seq('universe', repeat1($.identifier)),
+
+    // `attribute [simp] Nat.add_zero`
+    attribute: $ => seq(
+      'attribute',
+      '[', commaSep1($.identifier), ']',
+      repeat1($._expression),
+    ),
+
+    // `notation:10000 n "!" => factorial n`
+    notation: $ => seq(
+      choice('notation', 'macro_rules', 'syntax', 'macro', 'elab',
+             'prefix', 'infix', 'infixl', 'infixr', 'postfix'),
+      repeat(choice($._expression, '=>', ':=')),
+    ),
+
+    // `#check`, `#eval`, `#print`, etc.
+    hash_command: $ => seq(
+      field('command', $.hash_ident),
+      repeat($._expression),
+    ),
+
+    hash_ident: _ => /#[a-zA-Z_]\w*/,
+
+    // `example : 1 + 1 = 2 := by rfl`
+    example: $ => seq(
+      'example',
+      optional(field('binders', $.binders)),
+      optional($._type_spec),
+      ':=',
+      field('body', $._expression),
+    ),
 
     // ============================================================
     // Declarations
@@ -240,15 +275,19 @@ module.exports = grammar({
       $.subscript,
       $.binary_expression,
       $.unary_expression,
+      $.postfix_expression,
       $.projection,
       $.arrow,
       $.fun,
       $.forall,
+      $.exists,
       $.let,
+      $.have,
       $.if,
       $.if_let,
       $.match,
       $.do,
+      $.by,
     ),
 
     // Atoms: self-delimiting expressions that can appear as function arguments
@@ -281,11 +320,12 @@ module.exports = grammar({
         $.if_let,
         $.match,
         $.do,
+        $.by,
       )),
     )),
 
     // Array/list subscript: `arr[i]` or `arr[i]!` or `arr[i]?`
-    subscript: $ => prec(PREC.proj, seq(
+    subscript: $ => prec.left(PREC.proj, seq(
       field('object', $._expression),
       token.immediate('['),
       field('index', $._expression),
@@ -318,13 +358,14 @@ module.exports = grammar({
       const table = [
         [PREC.or, choice('||', '∨')],
         [PREC.and, choice('&&', '∧')],
-        [PREC.compare, choice('==', '!=', '<', '>', '<=', '>=', '≤', '≥')],
+        [PREC.compare, choice('==', '!=', '=', '<', '>', '<=', '>=', '≤', '≥', '≠',
+                               '∣')],  // divisibility
         [PREC.cons, '::'],
-        [PREC.add, choice('+', '-', '++')],
-        [PREC.mul, choice('*', '/', '%')],
+        [PREC.add, choice('+', '-', '++', '∪', '∩')],
+        [PREC.mul, choice('*', '/', '%', '∘')],
         [PREC.product, '×'],
-        // Pipeline operators
-        [PREC.arrow, choice('|>', '<|', '|>.', '$')],
+        // Pipeline / sequencing operators
+        [PREC.arrow, choice('|>', '<|', '|>.', '$', '<;>', '<;')],
       ];
 
       return choice(...table.map(([precedence, operator]) =>
@@ -336,10 +377,16 @@ module.exports = grammar({
       ));
     },
 
-    // Unary operators
+    // Prefix operators
     unary_expression: $ => prec(PREC.unary, seq(
       field('operator', choice('!', '¬', '-')),
       field('operand', $._expression),
+    )),
+
+    // Postfix operators: `n!`, `decide?`, `x?`
+    postfix_expression: $ => prec(PREC.proj, seq(
+      field('operand', $._expression),
+      field('operator', token.immediate(choice('!', '?'))),
     )),
 
     // Lambda: `fun x => e` or `fun (x : T) => e` or `fun (a, b) => e`
@@ -359,6 +406,140 @@ module.exports = grammar({
       field('binders', repeat1(choice($.identifier, $._bracketed_binder))),
       ',',
       field('body', $._expression),
+    )),
+
+    // Existential quantifier: `∃ x, P x`
+    exists: $ => prec.right(seq(
+      choice('exists', '∃'),
+      field('binders', repeat1(choice($.identifier, $._bracketed_binder))),
+      ',',
+      field('body', $._expression),
+    )),
+
+    // Have expression: `have h : T := proof; body`
+    have: $ => prec.right(seq(
+      'have',
+      optional(field('name', $.identifier)),
+      optional($._type_spec),
+      ':=',
+      field('value', $._expression),
+      optional(seq(
+        choice(';', $._layout_semicolon),
+        field('body', $._expression),
+      )),
+    )),
+
+    // ============================================================
+    // Tactic mode (entered via `by`)
+    // Tactics are a separate syntactic category from expressions.
+    // Expressions can contain `by` blocks, but never raw tactics.
+    // ============================================================
+
+    // `by` is the only entry point from expression world into tactic world.
+    by: $ => prec.right(seq(
+      'by',
+      $._layout_start,
+      $._tactic_seq,
+      optional($._layout_end),
+    )),
+
+    _tactic_seq: $ => prec.right(seq(
+      $._tactic,
+      repeat(seq(
+        choice($._layout_semicolon, ';'),
+        $._tactic,
+      )),
+    )),
+
+    // ── Tactic primitives ─────────────────────────────────────
+    // Each rule here lives exclusively inside `by` blocks.
+    // None of these appear in `_expression`.
+
+    _tactic: $ => choice(
+      $.tactic_apply,
+      $.tactic_focus,
+      $.tactic_case,
+      $.tactic_rewrite,
+      $.tactic_have,
+      $.tactic_let,
+      $.tactic_show,
+      $.tactic_calc,
+    ),
+
+    // Most tactics: `intro n`, `simp [lemma]`, `apply foo`, `exact bar`, `omega`
+    tactic_apply: $ => prec.right(PREC.app, seq(
+      field('tactic', $.identifier),
+      repeat(field('arg', choice(
+        $.identifier, $.number, $.hole,
+        $.parenthesized, $.anonymous_constructor,
+        $.tactic_config, $.by,
+      ))),
+    )),
+
+    // Configuration list: `[lemma1, ←lemma2, *]`
+    // Only appears in tactic context — no ambiguity with `list`.
+    tactic_config: $ => seq(
+      '[', commaSep(seq(optional('←'), $._expression)), ']',
+    ),
+
+    // Focus: `· tactic1; tactic2`
+    tactic_focus: $ => prec.right(seq(
+      '·',
+      $._layout_start,
+      $._tactic_seq,
+      optional($._layout_end),
+    )),
+
+    // Case split: `case name => ...` or `next => ...`
+    tactic_case: $ => prec.right(seq(
+      choice('case', 'next'),
+      repeat($.identifier),
+      '=>',
+      $._layout_start,
+      $._tactic_seq,
+      optional($._layout_end),
+    )),
+
+    // `rw`/`rewrite` always take a config list, optionally with `at`
+    tactic_rewrite: $ => prec.right(seq(
+      choice('rw', 'rewrite'),
+      $.tactic_config,
+      optional(seq('at', repeat1(choice($.identifier, '*')))),
+    )),
+
+    // `have h : T := proof` in tactic mode
+    tactic_have: $ => prec.right(seq(
+      choice('have', 'obtain', 'suffices'),
+      optional(field('name', $._pattern)),
+      optional($._type_spec),
+      ':=',
+      field('value', $._expression),
+    )),
+
+    // `let x := e` in tactic mode
+    tactic_let: $ => prec(1, seq(
+      'let',
+      field('pattern', $._pattern),
+      optional($._type_spec),
+      ':=',
+      field('value', $._expression),
+    )),
+
+    // `show T`
+    tactic_show: $ => seq('show', $._expression),
+
+    // `calc` block with steps
+    tactic_calc: $ => prec.right(seq(
+      'calc',
+      $._layout_start,
+      repeat1($.calc_step),
+      optional($._layout_end),
+    )),
+
+    calc_step: $ => prec.right(seq(
+      $._expression,
+      ':=',
+      $._expression,
     )),
 
     // Let binding: `let x := e` in do-blocks, or `let x := e; body` in expressions

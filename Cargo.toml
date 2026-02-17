@@ -1,6 +1,6 @@
 [package]
 name = "tree-sitter-lean4"
-version = "0.0.8"
+version = "0.1.0"
 edition = "2021"
 authors = ["Willem Vanhulle <willemvanhulle@protonmail.com>"]
 description = "Tree-sitter grammar for Lean 4 (generates parser at build time)"

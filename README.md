@@ -72,26 +72,6 @@ Push build cache to public cache server:
 nix build . --print-out-paths | cachix push wvhulle
 ```
 
-### AST-Grep
-
-[AST-Grep](https://ast-grep.github.io/reference/sgconfig.html) is a tool for quick large refactors. To set it up to use this Lean grammar, add to your `flake.nix`:
-Create `sgconfig.yml`:
-
-```yaml
-customLanguages:
-  lean:
-    libraryPath: tree-sitter-lean.so
-    extensions: [lean]
-    expandoChar: _
-```
-
-Now use `ast-grep`:
-
-```bash
-nix develop
-ast-grep --lang lean --pattern 'def $A := $B' your-file.lean
-```
-
 ## Development
 
 Read [writing the grammar](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html). Be careful of adding too many conflicts in the grammar as they cause exponential growth of the state space.
@@ -106,14 +86,8 @@ tree-sitter parse Test.lean # A long Lean file that needs to be parsed correctly
 Add tests for the Tree-Sitter grammar to [./test/corpus](./test/corpus).
 See [writing tests](https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html)
 
-You can also debug using AST-Grep with:
-
-```bash
-ast-grep run -p <PATTERN> --debug-query ast
-```
-
 ## License
 
-Based on <https://github.com/Julian/lean.nvim> with better support for parsing the interior of monad `do` blocks.
+Based on <https://github.com/Julian/lean.nvim>. Grammar was completely rewritten to be simpler.
 
 MIT
