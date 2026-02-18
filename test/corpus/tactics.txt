@@ -1,403 +1,321 @@
-========================
-Theorem With Tactic Body
-========================
+=====================================
+Simple rfl tactic
+=====================================
 
-theorem foo {m n : Nat} : 2 * m + 2 * n = 2 * (n + m) := by
-  rewrite Nat.add_comm
-  exact (Nat.left_distrib 2 n m).symm
-
----
-
-(module
-  (declaration
-    (theorem
-      name: (identifier)
-      (binders
-        (implicit_binder
-          name: (identifier)
-          name: (identifier)
-          type: (identifier)))
-      type:
-        (binary_expression
-          (binary_expression
-            (binary_expression (number) (identifier))
-            (binary_expression (number) (identifier)))
-          (binary_expression
-            (number)
-            (parenthesized (binary_expression (identifier) (identifier)))))
-      body:
-        (tactics
-          (rewrite (identifier))
-          (term
-            (proj
-              term:
-                (parenthesized
-                  (apply
-                    name: (identifier)
-                    arguments: (number)
-                    arguments: (identifier)
-                    arguments: (identifier)))
-              name: (identifier)))))))
-
-=================
-Tactic Expression
-=================
-
-variable {m n : Nat}
-#check (by
-  rewrite Nat.add_comm
-  exact (Nat.left_distrib 2 n m).symm : 2 * m + 2 * n = 2 * (n + m))
-
----
-
-(module
-  (variable
-    (implicit_binder
-      name: (identifier)
-      name: (identifier)
-      type: (identifier)))
-  (hash_command
-    (parenthesized
-      (tactics (rewrite (identifier))
-        (term
-          (proj
-            term:
-              (parenthesized
-                (apply
-                  name: (identifier)
-                  arguments: (number)
-                  arguments: (identifier)
-                  arguments: (identifier)))
-            name: (identifier))))
-      (type_ascription
-        type:
-          (binary_expression
-            (binary_expression
-              (binary_expression (number) (identifier))
-              (binary_expression (number) (identifier)))
-            (binary_expression
-              (number)
-              (parenthesized
-                (binary_expression (identifier) (identifier)))))))))
-
-====
-Simp
-====
-
-example : 2 = 2 := by simp
-
----
-
-(module
-  (declaration
-    (example (binary_expression (number) (number))
-      (tactics (simp)))))
-
-========================
-Simp With Extra Theorems
-========================
-
-example : 2 = 2 := by simp [foo, bar]
-
----
-
-(module
-  (declaration
-    (example
-      type: (binary_expression (number) (number))
-      body:
-        (tactics
-          (simp
-            extra: (list (identifier) (identifier)))))))
-
-=====
-Intro
-=====
-
-example : ∀ x y : Nat, x + y = x + y := by
-  intro x y
+theorem add_zero (n : Nat) : n + 0 = n := by
   rfl
 
 ---
 
 (module
-  (declaration
-    (example
-      (forall
-        (binders
-          (identifier)
-          (identifier)
-          (identifier))
-        (binary_expression
-          (binary_expression
-            (identifier)
-            (identifier))
-          (binary_expression
-            (identifier)
-            (identifier))))
-      (tactics
-        (intro
-          (identifier)
-          (identifier))
-        (rfl)))))
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        (identifier)))
+    (binary_expression
+      left: (binary_expression
+        left: (identifier)
+        right: (number))
+      right: (identifier))
+    body: (by
+      (tactic_apply
+        tactic: (identifier)))))
 
-=====
-Apply
-=====
+=====================================
+Tactic with rewrite
+=====================================
 
-example : true ↔ true := by apply Iff.intro
+theorem add_comm_rw (a b : Nat) : a + b = b + a := by
+  rw [Nat.add_comm]
 
 ---
 
 (module
-  (declaration
-    (example (binary_expression (true) (true))
-      (tactics (apply_tactic (identifier))))))
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        name: (identifier)
+        (identifier)))
+    (binary_expression
+      left: (binary_expression
+        left: (identifier)
+        right: (identifier))
+      right: (binary_expression
+        left: (identifier)
+        right: (identifier)))
+    body: (by
+      (tactic_rewrite
+        (tactic_config
+          (projection
+            object: (identifier)
+            field: (identifier)))))))
 
-========================
-Some Unknown User Tactic
-========================
+=====================================
+Intro and exact
+=====================================
 
-example : true ↔ true := by
-  foo
-  bar baz
-  baz
-
----
-
-(module
-  (declaration
-    (example (binary_expression (true) (true))
-      (tactics
-        (identifier)
-        (apply (identifier) (identifier))
-        (identifier)))))
-
-==========
-Semicolons
-==========
-
-example : (true ↔ true) ↔ (true ↔ true) := by
-  apply Iff.intro;
-  intro h;
-  exact h;
-  intro h;
-  exact h;
+theorem mp (p q : Prop) (h : p → q) (hp : p) : q := by
+  exact h hp
 
 ---
 
 (module
-  (declaration
-    (example
-      (binary_expression
-        (parenthesized (binary_expression (true) (true)))
-        (parenthesized (binary_expression (true) (true))))
-      (tactics
-        (apply_tactic (identifier))
-        (intro (identifier))
-        (term (identifier))
-        (intro (identifier))
-        (term (identifier))))))
-
-==============
-Synthetic Hole
-==============
-
-example {x : Nat} : x = x := by refine Eq.refl ?_
-
----
-
-(module
-  (declaration
-    (example
-      (binders
-        (implicit_binder
-          (identifier)
-          (identifier)))
-      (binary_expression
-        (identifier)
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        name: (identifier)
         (identifier))
-      (tactics
-        (apply
-          (identifier)
-          (identifier)
-          (synthetic_hole (hole)))))))
+      (explicit_binder
+        name: (identifier)
+        (arrow
+          domain: (identifier)
+          codomain: (identifier)))
+      (explicit_binder
+        name: (identifier)
+        (identifier)))
+    (identifier)
+    body: (by
+      (tactic_apply
+        tactic: (identifier)
+        arg: (identifier)
+        arg: (identifier)))))
 
-===========================
-Have Tactic With Name
-===========================
+=====================================
+Semicolon-separated tactics
+=====================================
 
-example : True := by
-  have h : 1 = 1 := rfl
-  trivial
-
----
-
-(module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (have_tactic
-          name: (identifier)
-          type: (binary_expression (number) (number))
-          value: (identifier))
-        (trivial)))))
-
-===========================
-Have Tactic Anonymous
-===========================
-
-example : True := by
-  have : 1 = 1 := rfl
-  trivial
+theorem mp' (p q : Prop) (h : p → q) (hp : p) : q := by
+  intro; exact h hp
 
 ---
 
 (module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (have_tactic
-          type: (binary_expression (number) (number))
-          value: (identifier))
-        (trivial)))))
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        name: (identifier)
+        (identifier))
+      (explicit_binder
+        name: (identifier)
+        (arrow
+          domain: (identifier)
+          codomain: (identifier)))
+      (explicit_binder
+        name: (identifier)
+        (identifier)))
+    (identifier)
+    body: (by
+      (tactic_apply
+        tactic: (identifier))
+      (tactic_apply
+        tactic: (identifier)
+        arg: (identifier)
+        arg: (identifier)))))
 
-===========================
-Have Tactic With By Proof
-===========================
+=====================================
+Broadcast combinator <;>
+=====================================
 
-example : True := by
-  have h : 1 = 1 := by rfl
-  trivial
-
----
-
-(module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (have_tactic
-          name: (identifier)
-          type: (binary_expression (number) (number))
-          value: (tactics (rfl)))
-        (trivial)))))
-
-===========================
-Have Tactic Inferred Type
-===========================
-
-example : True := by
-  have h := rfl
-  trivial
+theorem and_intro (p q : Prop) (hp : p) (hq : q) : p ∧ q := by
+  constructor <;> assumption
 
 ---
 
 (module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (have_tactic
-          name: (identifier)
-          value: (identifier))
-        (trivial)))))
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        name: (identifier)
+        (identifier))
+      (explicit_binder
+        name: (identifier)
+        (identifier))
+      (explicit_binder
+        name: (identifier)
+        (identifier)))
+    (binary_expression
+      left: (identifier)
+      right: (identifier))
+    body: (by
+      (tactic_apply
+        tactic: (identifier))
+      (tactic_apply
+        tactic: (identifier)))))
 
-===============================
-Have Tactic Anonymous Inferred
-===============================
+=====================================
+Tactic have
+=====================================
 
-example : True := by
-  have := rfl
-  trivial
-
----
-
-(module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (have_tactic
-          value: (identifier))
-        (trivial)))))
-
-=======
-Obtain
-=======
-
-example : True := by
-  obtain ⟨x, y⟩ := foo
-  trivial
+theorem ne_of_gt (n : Nat) (h : n > 0) : n ≠ 0 := by
+  have hpos := h
+  intro heq
+  simp [heq] at hpos
 
 ---
 
 (module
-  (declaration
-    (example
-      type: (true)
-      body: (tactics
-        (obtain
-          pattern: (anonymous_constructor (identifier) (identifier))
-          value: (identifier))
-        (trivial)))))
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        (identifier))
+      (explicit_binder
+        name: (identifier)
+        (binary_expression
+          left: (identifier)
+          right: (number))))
+    (binary_expression
+      left: (identifier)
+      right: (number))
+    body: (by
+      (tactic_have
+        name: (identifier)
+        value: (identifier))
+      (tactic_apply
+        tactic: (identifier)
+        arg: (identifier))
+      (tactic_apply
+        tactic: (identifier)
+        arg: (tactic_config
+          (identifier))
+        arg: (identifier)
+        arg: (identifier)))))
 
-=====
-Grind
-=====
+=====================================
+Forall with tactic intro and induction
+=====================================
 
-example : 1 = 1 := by grind
-
----
-
-(module
-  (declaration
-    (example
-      type: (binary_expression (number) (number))
-      body: (tactics (grind)))))
-
-==================
-Grind With Lemmas
-==================
-
-example : 1 = 1 := by grind [foo, bar]
-
----
-
-(module
-  (declaration
-    (example
-      type: (binary_expression (number) (number))
-      body: (tactics
-        (grind
-          extra: (list (identifier) (identifier)))))))
-
-======
-Decide
-======
-
-example : 1 = 1 := by decide
+theorem factorial_pos : ∀ n, 0 < factorial n := by
+  intro n; induction n <;> grind [factorial]
 
 ---
 
 (module
-  (declaration
-    (example
-      type: (binary_expression (number) (number))
-      body: (tactics (decide)))))
+  (definition
+    name: (name
+      (identifier))
+    (forall
+      binders: (identifier)
+      body: (binary_expression
+        left: (number)
+        right: (application
+          function: (identifier)
+          argument: (identifier))))
+    body: (by
+      (tactic_apply
+        tactic: (identifier)
+        arg: (identifier))
+      (tactic_apply
+        tactic: (identifier)
+        arg: (identifier))
+      (tactic_apply
+        tactic: (identifier)
+        arg: (tactic_config
+          (identifier))))))
 
-=====
-Omega
-=====
+=====================================
+Tactic focus with bullet
+=====================================
 
-example : 1 < 2 := by omega
+theorem and_elim (p q : Prop) (h : p ∧ q) : q ∧ p := by
+  · exact And.intro h.2 h.1
 
 ---
 
 (module
-  (declaration
-    (example
-      type: (comparison (number) (number))
-      body: (tactics (omega)))))
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        name: (identifier)
+        (identifier))
+      (explicit_binder
+        name: (identifier)
+        (binary_expression
+          left: (identifier)
+          right: (identifier))))
+    (binary_expression
+      left: (identifier)
+      right: (identifier))
+    body: (by
+      (tactic_focus
+        (tactic_apply
+          tactic: (identifier)
+          arg: (identifier)
+          arg: (identifier)
+          arg: (identifier))))))
+
+=====================================
+Calc block
+=====================================
+
+theorem add_assoc_calc (a b c : Nat) : a + b + c = a + (b + c) := by
+  calc a + b + c = a + (b + c) := Nat.add_assoc a b c
+
+---
+
+(module
+  (definition
+    name: (name
+      (identifier))
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        name: (identifier)
+        name: (identifier)
+        (identifier)))
+    (binary_expression
+      left: (binary_expression
+        left: (binary_expression
+          left: (identifier)
+          right: (identifier))
+        right: (identifier))
+      right: (binary_expression
+        left: (identifier)
+        right: (parenthesized
+          (binary_expression
+            left: (identifier)
+            right: (identifier)))))
+    body: (by
+      (tactic_calc
+        (calc_step
+          (binary_expression
+            left: (binary_expression
+              left: (binary_expression
+                left: (identifier)
+                right: (identifier))
+              right: (identifier))
+            right: (binary_expression
+              left: (identifier)
+              right: (parenthesized
+                (binary_expression
+                  left: (identifier)
+                  right: (identifier)))))
+          (application
+            function: (application
+              function: (application
+                function: (projection
+                  object: (identifier)
+                  field: (identifier))
+                argument: (identifier))
+              argument: (identifier))
+            argument: (identifier)))))))

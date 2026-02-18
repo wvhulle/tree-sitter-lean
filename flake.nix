@@ -25,45 +25,26 @@
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
     {
-      packages = forAllSystems (
-        pkgs:
-        let
-          grammar = pkgs.tree-sitter.buildGrammar {
-            language = "lean";
-            version = "0.1.1";
-            src = pkgs.lib.cleanSource ./.;
-            generate = true;
-            postInstall = ''
-              mv $out/parser $out/lean.so
-            '';
-          };
-        in
-        {
-          inherit grammar;
-          default = grammar;
-        }
-      );
-
-      devShells = forAllSystems (
-        pkgs: {
-          default = pkgs.mkShell {
-            packages = with pkgs; [
-              tree-sitter
-              nodejs
-              cargo
-              rustc
-              ast-grep
-            ];
-          };
-        }
-      );
-
-      overlays.default = final: prev: {
-        tree-sitter = prev.tree-sitter // {
-          builtGrammars = prev.tree-sitter.builtGrammars // {
-            tree-sitter-lean = self.packages.${final.stdenv.hostPlatform.system}.grammar;
-          };
+      packages = forAllSystems (pkgs: {
+        default = pkgs.tree-sitter.buildGrammar {
+          language = "lean";
+          version = "0.1.1";
+          src = pkgs.lib.cleanSource ./.;
+          generate = true;
+          postInstall = ''
+            mv $out/parser $out/lean.so
+          '';
         };
-      };
+      });
+
+      devShells = forAllSystems (pkgs: {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            tree-sitter
+            rustup
+          ];
+        };
+      });
+
     };
 }

@@ -27,20 +27,12 @@ const PREC = {
 };
 
 // Helper functions
-function sep1(rule, separator) {
-  return seq(rule, repeat(seq(separator, rule)));
-}
-
-function sep(rule, separator) {
-  return optional(sep1(rule, separator));
-}
-
 function commaSep1(rule) {
-  return sep1(rule, ',');
+  return seq(rule, repeat(seq(',', rule)));
 }
 
 function commaSep(rule) {
-  return sep(rule, ',');
+  return optional(commaSep1(rule));
 }
 
 module.exports = grammar({
@@ -335,7 +327,7 @@ module.exports = grammar({
     )),
 
     // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
-    name: $ => sep1($.identifier, token.immediate('.')),
+    name: $ => seq($.identifier, repeat(seq(token.immediate('.'), $.identifier))),
 
     // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
     projection: $ => prec.left(PREC.proj, seq(
@@ -594,7 +586,7 @@ module.exports = grammar({
       '(',
       $._pattern,
       ',',
-      sep1($._pattern, ','),
+      commaSep1($._pattern),
       ')',
     ),
 
@@ -789,7 +781,7 @@ module.exports = grammar({
     structure_instance: $ => seq(
       '{',
       optional(seq(field('extends', $._expression), 'with')),
-      sep($.field_assignment, choice(',', /\n/)),
+      optional(seq($.field_assignment, repeat(seq(choice(',', /\n/), $.field_assignment)))),
       optional($._type_spec),
       '}',
     ),
