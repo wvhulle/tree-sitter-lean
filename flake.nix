@@ -45,13 +45,8 @@
       );
 
       devShells = forAllSystems (
-        pkgs:
-        let
-          grammar = self.packages.${pkgs.stdenv.hostPlatform.system}.grammar;
-        in
-        {
+        pkgs: {
           default = pkgs.mkShell {
-            inputsFrom = [ grammar ];
             packages = with pkgs; [
               tree-sitter
               nodejs
@@ -59,10 +54,6 @@
               rustc
               ast-grep
             ];
-            shellHook = ''
-              rm -f tree-sitter-lean.so
-              ln -sf ${grammar}/lean.so tree-sitter-lean.so
-            '';
           };
         }
       );
@@ -70,12 +61,7 @@
       overlays.default = final: prev: {
         tree-sitter = prev.tree-sitter // {
           builtGrammars = prev.tree-sitter.builtGrammars // {
-            tree-sitter-lean = final.tree-sitter.buildGrammar {
-              language = "lean";
-              version = "0.0.3";
-              src = final.lib.cleanSource ./.;
-              generate = true;
-            };
+            tree-sitter-lean = self.packages.${final.stdenv.hostPlatform.system}.grammar;
           };
         };
       };
