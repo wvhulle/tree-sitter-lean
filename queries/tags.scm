@@ -5,9 +5,17 @@
 ; ── Top-level declarations ────────────────────────────────────────────────────
 
 (definition
-  name: (name (identifier) @name .)) @definition.function
+  name: (identifier) @name) @definition.function
 
 (example) @definition.function
+
+; ── Constants & axioms ──────────────────────────────────────────────────────
+
+(constant
+  name: (identifier) @name) @definition.constant
+
+(axiom
+  name: (identifier) @name) @definition.constant
 
 ; ── Type declarations ─────────────────────────────────────────────────────────
 
@@ -21,10 +29,14 @@
 (constructor
   name: (identifier) @name) @definition.struct
 
+; Structure fields
+(structure_field
+  name: (identifier) @name) @definition.field
+
 ; ── Namespaces / sections ────────────────────────────────────────────────────
 
 (namespace
-  name: (name (identifier) @name .)) @definition.module
+  name: (identifier) @name) @definition.module
 
 (section
   name: (identifier) @name) @definition.module

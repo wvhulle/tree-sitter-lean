@@ -2,11 +2,11 @@
 
 Lean4 is a programming language, commonly used for mathematical theorem proving as a [proof assistant](https://en.wikipedia.org/wiki/Proof_assistant).
 
-This project contains:
+This project contains a Lean parser definition:
 
 - Tree-Sitter grammar for parsing [Lean 4](github.com/leanprover/lean4) source code.
-- Rust crate that can be used in combination with `tree-sitter` crate with bindings for parsing Lean
-- Nix flake for using the compiled parser in other tools in the Tree-Sitter ecosystem such as AST-Grep
+- Tree-Sitter queries for usage in the modal text editor [Helix](https://helix-editor.vercel.app/).
+- Rust library pushed to Crates.io for parsing Lean in a Rust program
 
 **Important**: Lean is a very extensible language. Therefore, the Tree-Sitter grammar is of limited use. For parsing advanced Lean programs you will need to use the Lean kernel. See also [Metaprogramming in Lean](https://github.com/leanprover-community/lean4-metaprogramming-book).
 
@@ -107,6 +107,14 @@ tree-sitter test --update
 ```
 
 See [writing tests](https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html)
+
+You should also test the queries from `./queries`:
+
+```bash
+tree-sitter query higlights.scm Test.lean
+```
+
+This will report any errors such as incorrect node names in the query file.
 
 ## License
 

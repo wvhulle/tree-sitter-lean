@@ -7,6 +7,7 @@
 ; ── Indent scopes (entering these nodes increases indent) ────────────────────
 
 [
+  ; Bracket-based
   (parenthesized)
   (tuple)
   (anonymous_constructor)
@@ -15,6 +16,7 @@
   (list)
   (tactic_config)
 
+  ; Block-forming expressions
   (by)
   (do)
   (match)
@@ -23,7 +25,19 @@
   (for_in)
   (if)
   (if_let)
+  (let)
+  (have)
 
+  ; Declarations
+  (definition)
+  (structure)
+  (inductive)
+  (constant)
+  (namespace)
+  (section)
+  (where_decl)
+
+  ; Tactic blocks
   (tactic_focus)
   (tactic_case)
   (tactic_calc)
@@ -36,4 +50,5 @@
   "]"
   "}"
   "⟩"
+  "end"
 ] @outdent

@@ -69,6 +69,7 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$.where_decl],
+    [$.tactic_config, $.list],
   ],
 
   rules: {
@@ -540,6 +541,7 @@ module.exports = grammar({
         choice($._layout_semicolon, ';', '<;>', '<;'),
         $._tactic,
       )),
+      optional(';'),
     )),
 
     // ── Tactic primitives ─────────────────────────────────────
@@ -561,18 +563,15 @@ module.exports = grammar({
     tactic_apply: $ => prec.right(PREC.app, seq(
       field('tactic', $.identifier),
       repeat(field('arg', choice(
-        $.identifier, $.number, $.hole, $.synthetic_hole,
-        $.string, $.quoted_name, $.explicit,
-        $.parenthesized, $.anonymous_constructor,
-        $.tactic_config, $.by,
+        $._expression, $.tactic_config,
       ))),
     )),
 
     // Configuration list: `[lemma1, ←lemma2, *]`
     // Only appears in tactic context — no ambiguity with `list`.
-    tactic_config: $ => seq(
+    tactic_config: $ => prec(1, seq(
       '[', commaSep(seq(optional('←'), $._expression)), ']',
-    ),
+    )),
 
     // Focus: `· tactic1; tactic2`
     tactic_focus: $ => prec.right(seq(
@@ -593,9 +592,12 @@ module.exports = grammar({
     )),
 
     // `rw`/`rewrite` always take a config list, optionally with `at`
-    tactic_rewrite: $ => prec.right(seq(
+    tactic_rewrite: $ => prec.right(PREC.app, seq(
       choice('rw', 'rewrite'),
-      optional($.tactic_config),
+      choice(
+        $.tactic_config,
+        repeat1(field('arg', $._expression)),
+      ),
       optional(seq('at', repeat1(choice($.identifier, '*')))),
     )),
 

@@ -8,10 +8,20 @@
 ((identifier) @type
  (#match? @type "^[A-Z]"))
 
+; ── Modifiers ──────────────────────────────────────────────────
+
+[
+  "noncomputable"
+  "partial"
+  "protected"
+  "private"
+  "unsafe"
+] @keyword.storage.modifier
+
 ; ── Declarations ─────────────────────────────────────────────
 
 (definition
-  name: (name (identifier) @function))
+  name: (identifier) @function)
 
 (structure
   name: (identifier) @type)
@@ -22,22 +32,33 @@
 (constructor
   name: (identifier) @constructor)
 
+(constant
+  name: (identifier) @constant)
+
+(axiom
+  name: (identifier) @function)
+
 (structure_field
   name: (identifier) @variable.other.member)
 
 ; ── Namespaces & imports ─────────────────────────────────────
 
 (namespace
-  name: (name (identifier) @namespace))
+  name: (identifier) @namespace)
 
 (open
-  namespace: (name (identifier) @namespace))
+  namespace: (identifier) @namespace)
 
 (section
   name: (identifier) @namespace)
 
 (import
   module: (_) @namespace)
+
+; ── Explicit (@) ───────────────────────────────────────────────
+
+(explicit
+  "@" @operator)
 
 ; ── Patterns ─────────────────────────────────────────────────
 
@@ -47,10 +68,10 @@
 ; ── Projections ──────────────────────────────────────────────
 
 (projection
-  field: (identifier) @variable.other.member)
+  name: (identifier) @variable.other.member)
 
 (projection
-  field: (number) @variable.other.member)
+  name: (number) @variable.other.member)
 
 ; ── Binders ──────────────────────────────────────────────────
 
@@ -126,8 +147,7 @@
 (tactic_rewrite
   "rewrite" @function.builtin)
 
-(hash_command
-  command: (hash_ident) @keyword.directive)
+(hash_command) @keyword.directive
 
 ; ── Types ────────────────────────────────────────────────────
 
@@ -150,6 +170,9 @@
   "end"
   "example"
   "attribute"
+  "constant"
+  "axiom"
+  "extends"
 ] @keyword
 
 (prelude) @keyword
@@ -204,7 +227,7 @@
 
 "return" @keyword.control.return
 
-(sorry) @keyword.control
+(sorry) @error
 
 ; ── Operators ────────────────────────────────────────────────
 
@@ -229,6 +252,7 @@
 ; ── Literals ─────────────────────────────────────────────────
 
 (number) @constant.numeric.integer
+(float) @constant.numeric.float
 (string) @string
 (char) @constant.character
 (hole) @variable.builtin
@@ -240,6 +264,7 @@
 
 (interpolation
   "{" @punctuation.special
+  (_) @none
   "}" @punctuation.special)
 
 ; ── Comments ─────────────────────────────────────────────────

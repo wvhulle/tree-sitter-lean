@@ -4,7 +4,10 @@
   (definition)
   (structure)
   (inductive)
+  (constant)
+  (axiom)
   (example)
+  (where_decl)
 
   (do)
   (by)

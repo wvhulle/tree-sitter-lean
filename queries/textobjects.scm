@@ -10,6 +10,12 @@
 
 (example body: (_) @function.inside) @function.around
 
+; Lambdas (fun / λ)
+(fun body: (_) @function.inside) @function.around
+
+; Where declarations
+(where_decl body: (_) @function.inside) @function.around
+
 ; ── Types (structures / inductives) ──────────────────────────────────────────
 
 (structure
@@ -19,16 +25,17 @@
   (constructor) @class.inside) @class.around
 
 ; ── Parameters / binders ─────────────────────────────────────────────────────
-; Explicit binders `(x : T)`, implicit `{x : T}`, instance `[inst : C]`
+; Lean binders are space-separated, not comma-separated:
+;   (x : Nat) (y : Nat) {z : Prop} [inst : Decidable p]
 
-(binders
-  ((_) @parameter.inside . ","? @parameter.around) @parameter.around)
+(explicit_binder
+  name: (identifier) @parameter.inside) @parameter.around
 
-(explicit_binder) @parameter.around
+(implicit_binder
+  name: (identifier) @parameter.inside) @parameter.around
 
-(implicit_binder) @parameter.around
-
-(instance_binder) @parameter.around
+(instance_binder
+  name: (identifier) @parameter.inside) @parameter.around
 
 ; ── Comments ─────────────────────────────────────────────────────────────────
 
@@ -39,11 +46,13 @@
 ; ── Entries (items in a list-like context) ───────────────────────────────────
 ; Useful for navigating constructors, match arms, calc steps, tactic subgoals.
 
-(match_arm) @entry.around
+(match_arm
+  body: (_) @entry.inside) @entry.around
 
 (constructor) @entry.around
 
-(structure_field) @entry.around
+(structure_field
+  type: (_) @entry.inside) @entry.around
 
 (calc_step) @entry.around
 
