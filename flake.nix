@@ -30,12 +30,29 @@
         let
           src = pkgs.lib.cleanSource ./.;
           version = "0.1.1";
-        in
-        {
-          default = pkgs.tree-sitter.buildGrammar {
-            language = "lean";
+
+          # Run tree-sitter generate once, reuse the C sources for all targets
+          generatedSrc = pkgs.stdenvNoCC.mkDerivation {
+            pname = "tree-sitter-lean-generated";
             inherit version src;
-            generate = true;
+            nativeBuildInputs = [
+              pkgs.nodejs
+              pkgs.tree-sitter
+            ];
+            buildPhase = ''
+              tree-sitter generate
+            '';
+            installPhase = ''
+              cp -r . $out
+            '';
+          };
+        in
+        rec {
+          native = pkgs.tree-sitter.buildGrammar {
+            language = "lean";
+            inherit version;
+            src = generatedSrc;
+            generate = false;
             postInstall = ''
               mv $out/parser $out/lean.so
             '';
@@ -47,17 +64,15 @@
             in
             pkgs.stdenvNoCC.mkDerivation {
               pname = "tree-sitter-lean-wasm";
-              inherit version src;
+              inherit version;
+              src = generatedSrc;
 
               nativeBuildInputs = [
                 wasiCC
                 pkgs.lld
-                pkgs.nodejs
-                pkgs.tree-sitter
               ];
 
               buildPhase = ''
-                tree-sitter generate
                 wasm32-unknown-wasi-cc -fPIC -Os -c src/parser.c -o parser.o -I src
                 wasm32-unknown-wasi-cc -fPIC -Os -c src/scanner.c -o scanner.o -I src
                 wasm-ld --no-entry --export=tree_sitter_lean --allow-undefined -o lean.wasm *.o
@@ -71,6 +86,10 @@
                 fi
               '';
             };
+
+          source = generatedSrc;
+
+          default = native;
         }
       );
 
