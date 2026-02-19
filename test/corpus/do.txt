@@ -217,9 +217,10 @@ Return One Line
     (parenthesized
       (do
         (do_return
-          value: (identifier)))
-      (type_ascription
-        type: (identifier)))))
+          value: (projection
+            term: (identifier)
+            name: (identifier))))
+      type: (identifier))))
 
 ==============
 Return Nothing
@@ -319,8 +320,7 @@ Bare Identifier
     (parenthesized
       (do
         (true))
-      (type_ascription
-        (identifier)))))
+      (identifier))))
 
 =================================
 If Condition Function Application
@@ -338,7 +338,10 @@ If Condition Function Application
           (identifier)
           (number))
         (do
-          (identifier))
-        (identifier))
-      (type_ascription
-        (identifier)))))
+          (projection
+            (identifier)
+            (identifier)))
+        (projection
+          (identifier)
+          (identifier)))
+      (identifier))))

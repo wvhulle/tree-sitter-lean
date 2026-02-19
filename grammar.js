@@ -284,7 +284,7 @@ module.exports = grammar({
       optional(field('binders', $.binders)),
       optional($._type_spec),
       optional(choice(':=', 'where')),
-      repeat($.constructor),
+      repeat(field('constructors', $.constructor)),
       optional(seq('deriving', commaSep1($.identifier))),
     ),
 
@@ -428,7 +428,7 @@ module.exports = grammar({
                                '∣')],  // divisibility
         [PREC.cons, '::'],
         [PREC.add, choice('+', '-', '++', '∪', '∩')],
-        [PREC.mul, choice('*', '/', '%', '∘')],
+        [PREC.mul, choice('*', '/', '%', '∘', '^')],
         [PREC.product, '×'],
         // Pipeline operators
         [PREC.arrow, choice('|>', '<|', '|>.', '$')],
@@ -839,7 +839,14 @@ module.exports = grammar({
     // Delimited Expressions
     // ============================================================
 
-    parenthesized: $ => seq('(', optional($._expression), ')'),
+    parenthesized: $ => seq(
+      '(',
+      optional(seq(
+        $._expression,
+        optional(seq(':', field('type', $._expression))),
+      )),
+      ')',
+    ),
 
     tuple: $ => seq(
       '(',

@@ -1204,7 +1204,7 @@ inductive Foo (F : Type) | x (foo : F)
       (explicit_binder
         name: (identifier)
         type: (identifier)))
-    (constructor
+    constructors: (constructor
       name: (identifier)
       binders: (binders
         (explicit_binder
@@ -1222,9 +1222,9 @@ inductive Bit | bit0 | bit1
 (module
   (inductive
     name: (identifier)
-    (constructor
+    constructors: (constructor
       name: (identifier))
-    (constructor
+    constructors: (constructor
       name: (identifier))))
 
 ================================
@@ -1238,9 +1238,9 @@ inductive Bit where | bit0 | bit1
 (module
   (inductive
     name: (identifier)
-    (constructor
+    constructors: (constructor
       name: (identifier))
-    (constructor
+    constructors: (constructor
       name: (identifier))))
 
 ========================
@@ -1268,7 +1268,7 @@ inductive Foo :=
 (module
   (inductive
     name: (identifier)
-    (constructor
+    constructors: (constructor
       name: (identifier))))
 
 ====================
@@ -1823,7 +1823,7 @@ deriving Baz, Quux
 (module
   (inductive
     name: (identifier)
-    (constructor
+    constructors: (constructor
       name: (identifier))
     (identifier)
     (identifier)))

@@ -727,96 +727,98 @@ example : 4 = 4 % 5 := rfl
 (module
   (hash_command
     (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number))))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number))))
   (hash_command
     (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number))))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number))))
   (hash_command
     (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number))))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number))))
   (hash_command
     (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number))))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number))))
   (hash_command
     (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number))))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number))))
   (example
     type: (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number)))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number)))
     body: (identifier))
   (example
     type: (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number)))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number)))
     body: (identifier))
   (example
     type: (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number)))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number)))
     body: (identifier))
   (example
     type: (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number)))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number)))
     body: (identifier))
   (example
     type: (binary_expression
-      (number)
-      (binary_expression
-        (number)
-        (number)))
+      left: (number)
+      right: (binary_expression
+        left: (number)
+        right: (number)))
     body: (identifier))
   (hash_command
     (binary_expression
-      (binary_expression
-        (false)
-        (false))
-      (true)))
+      left: (binary_expression
+        left: (false)
+        right: (false))
+      right: (true)))
   (hash_command
     (binary_expression
-      (true)
-      (binary_expression
-        (false)
-        (false))))
+      left: (true)
+      right: (binary_expression
+        left: (false)
+        right: (false))))
   (hash_command
     (binary_expression
-      (binary_expression
-        (binary_expression
-          (number)
-          (number))
-        (number))
-      (number)))
+      left: (binary_expression
+        left: (binary_expression
+          left: (number)
+          right: (number))
+        right: (number))
+      right: (number)))
   (hash_command
     (binary_expression
-      (binary_expression
-        (unary_expression
-          (float))
-        (number))
-      (number))))
+      left: (binary_expression
+        left: (unary_expression
+          operand: (projection
+            term: (number)
+            name: (number)))
+        right: (number))
+      right: (number))))
 
 ==========
 Comparison
@@ -1329,24 +1331,21 @@ Type Ascription
   (hash_command
     (parenthesized
       (number)
-      (type_ascription
-        type: (identifier))))
+      type: (identifier)))
   (hash_command
     (parenthesized
       (application
         name: (identifier)
         arguments: (identifier))
-      (type_ascription
-        type: (identifier))))
+      type: (identifier)))
   (hash_command
     (parenthesized
       (application
         name: (identifier)
         arguments: (identifier))
-      (type_ascription
-        type: (application
-          name: (identifier)
-          arguments: (identifier))))))
+      type: (application
+        name: (identifier)
+        arguments: (identifier)))))
 
 =================================
 Application Across Multiple Lines
@@ -1594,12 +1593,15 @@ Unless
 (module
   (hash_command
     (parenthesized
-      (unless
-        (true)
-        (do
-          (identifier)))
-      (type_ascription
-        type: (identifier)))))
+      (application
+        name: (application
+          name: (identifier)
+          arguments: (true))
+        arguments: (do
+          (projection
+            term: (identifier)
+            name: (identifier))))
+      type: (identifier))))
 
 ===========
 Quantifiers

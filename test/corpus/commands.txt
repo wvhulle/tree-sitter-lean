@@ -53,13 +53,12 @@ Same Line #commands
   (hash_command
     (parenthesized
       (identifier)
-      (type_ascription
-        type: (application
-          name: (identifier)
-          arguments: (parenthesized
-            (binary_expression
-              (identifier)
-              (hole))))))))
+      type: (application
+        name: (identifier)
+        arguments: (parenthesized
+          (binary_expression
+            left: (identifier)
+            right: (hole)))))))
 
 =======
 Prelude
