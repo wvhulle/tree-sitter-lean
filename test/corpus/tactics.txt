@@ -170,9 +170,12 @@ example : true ↔ true := by apply Iff.intro
     (binary_expression
       (true)
       (true))
-    (by
-      (tactic_apply
-        (identifier)))))
+    (projection
+      (by
+        (tactic_apply
+          (identifier)
+          (identifier)))
+      (identifier))))
 
 ========================
 Some Unknown User Tactic
@@ -191,11 +194,13 @@ example : true ↔ true := by
       (true)
       (true))
     (by
-      (identifier)
-      (application
+      (tactic_apply
+        (identifier))
+      (tactic_apply
         (identifier)
         (identifier))
-      (identifier))))
+      (tactic_apply
+        (identifier)))))
 
 ==========
 Semicolons
@@ -250,9 +255,11 @@ example {x : Nat} : x = x := by refine Eq.refl ?_
     (binary_expression
       (identifier)
       (identifier))
-    (by
-      (application
-        (identifier)
-        (identifier)
-        (synthetic_hole
-          (hole))))))
+    (application
+      (projection
+        (by
+          (tactic_apply
+            (identifier)
+            (identifier)))
+        (identifier))
+      (synthetic_hole))))

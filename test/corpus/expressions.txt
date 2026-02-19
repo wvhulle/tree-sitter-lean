@@ -482,9 +482,7 @@ Nested If/Then/Else
       (number)))
   (hash_command
     (unary_expression
-      (projection
-        (number)
-        (number))))
+      (number)))
   (hash_command
     (unary_expression
       (identifier)))
@@ -814,9 +812,7 @@ example : 4 = 4 % 5 := rfl
     (binary_expression
       left: (binary_expression
         left: (unary_expression
-          operand: (projection
-            term: (number)
-            name: (number)))
+          operand: (number))
         right: (number))
       right: (number))))
 
@@ -953,12 +949,15 @@ Mixed Named Arguments
 (module
   (hash_command
     (application
-      (identifier)
-      (number)
-      (named_argument
-        (identifier)
+      (application
+        (application
+          (application
+            (identifier)
+            (number))
+          (named_argument
+            (identifier)
+            (number)))
         (number))
-      (number)
       (named_argument
         (identifier)
         (number)))))
@@ -1579,7 +1578,7 @@ theorem baz : (afweio)» := 12
 
 (module
   (definition
-    name: (identifier)
+    name: (escaped_identifier)
     body: (number)))
 
 ======

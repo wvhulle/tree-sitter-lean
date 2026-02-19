@@ -415,29 +415,27 @@ theorem foo {p : α × β} :
 (module
   (definition
     name: (identifier)
-    (binders
+    binders: (binders
       (implicit_binder
         name: (identifier)
         type: (binary_expression
-          (identifier)
-          (identifier))))
+          left: (identifier)
+          right: (identifier))))
     type: (binary_expression
-      (binary_expression
+      left: (binary_expression
+        left: (binary_expression
+          left: (identifier)
+          right: (identifier))
+        right: (identifier))
+      right: (identifier))
+    (match_arm
+      patterns: (tuple
         (identifier)
-        (binary_expression
-          (identifier)
-          (identifier)))
-      (identifier))
-    body: (match_arm
-      lhs: (parenthesized
+        (identifier))
+      patterns: (tuple
         (identifier)
-        (tuple_tail
-          (identifier)))
-      lhs: (parenthesized
-        (identifier)
-        (tuple_tail
-          (identifier)))
-      (sorry))))
+        (identifier))
+      body: (sorry))))
 
 ====================
 Theorem Missing Type

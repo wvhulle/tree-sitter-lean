@@ -92,8 +92,11 @@ module.exports = grammar({
     // ============================================================
 
     _command: $ => choice(
-      // Declarations and example with optional leading modifiers
-      seq(repeat($._modifier), choice($._declaration, $.declaration, $.example)),
+      // Declarations, notations, and examples with optional leading modifiers
+      seq(repeat($._modifier), choice(
+        $._declaration, $.declaration, $.example,
+        $.notation, $.attribute,
+      )),
       // Other commands (no modifiers)
       $.namespace,
       $.section,
@@ -102,19 +105,17 @@ module.exports = grammar({
       $.export,
       $.variable,
       $.universe,
-      $.attribute,
-      $.notation,
       $.hash_command,
     ),
 
     // Modifier keywords consumed transparently (no node created)
-    _modifier: _ => choice('noncomputable', 'partial', 'protected', 'private', 'unsafe'),
+    _modifier: _ => choice('noncomputable', 'partial', 'protected', 'private', 'unsafe', 'scoped', 'local'),
 
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
     namespace: $ => seq('namespace', field('name', $._name)),
 
-    section: $ => seq('section', optional(field('name', $.identifier))),
+    section: $ => seq('section', optional(field('name', $._name))),
 
     // End: `end` or `end Foo` or `end Foo.Bar.Baz`
     end: $ => seq('end', optional(field('name', $._name))),
@@ -135,33 +136,33 @@ module.exports = grammar({
     export: $ => seq(
       'export',
       field('class', $.identifier),
-      '(', repeat1($.identifier), ')',
+      '(', repeat($.identifier), ')',
     ),
 
     variable: $ => seq('variable', repeat1($._bracketed_binder)),
 
-    universe: $ => seq('universe', repeat1($.identifier)),
+    universe: $ => seq(choice('universe', 'universes'), repeat1($.identifier)),
 
     // `attribute [simp] Nat.add_zero`
-    attribute: $ => seq(
+    attribute: $ => prec.left(seq(
       'attribute',
       '[', commaSep1($.identifier), ']',
       repeat1($._expression),
-    ),
+    )),
 
     // `notation:10000 n "!" => factorial n`
-    notation: $ => seq(
+    notation: $ => prec.left(seq(
       choice('notation', 'macro_rules', 'syntax', 'macro', 'elab',
              'prefix', 'infix', 'infixl', 'infixr', 'postfix'),
       optional(seq(':', $.number)),  // priority
       repeat(choice($._expression, '=>', ':=')),
-    ),
+    )),
 
     // `#check`, `#eval`, `#print`, etc.
-    hash_command: $ => seq(
+    hash_command: $ => prec.left(seq(
       /#[a-zA-Z_]\w*/,
       repeat($._expression),
-    ),
+    )),
 
     // `example : 1 + 1 = 2 := by rfl`
     example: $ => seq(
@@ -341,6 +342,7 @@ module.exports = grammar({
       $.subscript,
       $.binary_expression,
       $.unary_expression,
+      $.explicit,
       // postfix ! and ? are handled by subscript modifier and notation
       $.projection,
       $.arrow,
@@ -364,6 +366,7 @@ module.exports = grammar({
       $.string,
       $.char,
       $.parenthesized,
+      $.named_argument,
       $.tuple,
       $.anonymous_constructor,
       $.structure_instance,
@@ -371,6 +374,10 @@ module.exports = grammar({
       $.list,
       $.range,
       $.hole,
+      $.synthetic_hole,
+      $.quoted_name,
+      $.double_quoted_name,
+      $.ellipsis,
       $.sorry,
       $._boolean,
     ),
@@ -400,7 +407,10 @@ module.exports = grammar({
     )),
 
     // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
-    _name: $ => seq($.identifier, repeat(seq(token.immediate('.'), $.identifier))),
+    _name: $ => seq(
+      choice($.identifier, $.escaped_identifier),
+      repeat(seq(token.immediate('.'), choice($.identifier, $.escaped_identifier))),
+    ),
 
     // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
     projection: $ => prec.left(PREC.proj, seq(
@@ -425,7 +435,7 @@ module.exports = grammar({
         [PREC.or, choice('||', '∨')],
         [PREC.and, choice('&&', '∧')],
         [PREC.compare, choice('==', '!=', '=', '<', '>', '<=', '>=', '≤', '≥', '≠',
-                               '∣')],  // divisibility
+                               '∣', '↔', '⊢')],  // divisibility, iff, turnstile
         [PREC.cons, '::'],
         [PREC.add, choice('+', '-', '++', '∪', '∩')],
         [PREC.mul, choice('*', '/', '%', '∘', '^')],
@@ -448,6 +458,9 @@ module.exports = grammar({
       field('operator', choice('!', '¬', '-')),
       field('operand', $._expression),
     )),
+
+    // Explicit: `@ident` — suppresses implicit arguments
+    explicit: $ => seq('@', $._atom),
 
     // Note: postfix `!` and `?` are handled by:
     // - subscript modifier: `arr[i]!`, `arr[i]?`
@@ -535,7 +548,7 @@ module.exports = grammar({
     tactic_apply: $ => prec.right(PREC.app, seq(
       field('tactic', $.identifier),
       repeat(field('arg', choice(
-        $.identifier, $.number, $.hole,
+        $.identifier, $.number, $.hole, $.synthetic_hole,
         $.parenthesized, $.anonymous_constructor,
         $.tactic_config, $.by,
       ))),
@@ -848,6 +861,15 @@ module.exports = grammar({
       ')',
     ),
 
+    // Named argument: `(name := value)`
+    named_argument: $ => seq(
+      '(',
+      field('name', $.identifier),
+      ':=',
+      field('value', $._expression),
+      ')',
+    ),
+
     tuple: $ => seq(
       '(',
       $._expression,
@@ -903,6 +925,7 @@ module.exports = grammar({
     escaped_identifier: _ => /«[^»]*»/,
 
     number: _ => choice(
+      /\d+\.\d+/,                // float (must precede decimal integer)
       /\d+/,                    // decimal
       /0x[0-9a-fA-F]+/,         // hex
       /0b[01]+/,                // binary
@@ -937,6 +960,17 @@ module.exports = grammar({
 
     // Hole/placeholder: `_` or `·` (cdot, for anonymous functions)
     hole: _ => choice('_', '·'),
+
+    // Synthetic hole: `?foo` or `?_`
+    synthetic_hole: _ => /\?[_a-zA-Z]\w*/,
+
+    // Quoted name: `` `name `` or ``` ``name ```
+    quoted_name: $ => seq('`', $.identifier),
+    double_quoted_name: $ => seq('``', $.identifier),
+
+    // Ellipsis argument: `..`
+    ellipsis: _ => '..',
+
     sorry: _ => 'sorry',
 
     _boolean: $ => choice($.true, $.false),

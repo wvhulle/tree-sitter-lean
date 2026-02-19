@@ -186,9 +186,7 @@ export Foo ()
 
 (module
   (export
-    (identifier)
-    (identifier
-      (MISSING _identifier))))
+    (identifier)))
 
 ========================
 Export With Missing Name
@@ -238,7 +236,10 @@ universes u2 v2 w2
 ---
 
 (module
-  (ERROR))
+  (universe
+    (identifier)
+    (identifier)
+    (identifier)))
 
 ===============
 Quoted Commands
