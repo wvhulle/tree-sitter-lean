@@ -482,7 +482,7 @@ Nested If/Then/Else
       (number)))
   (hash_command
     (unary_expression
-      (number)))
+      (float)))
   (hash_command
     (unary_expression
       (identifier)))
@@ -812,7 +812,7 @@ example : 4 = 4 % 5 := rfl
     (binary_expression
       left: (binary_expression
         left: (unary_expression
-          operand: (number))
+          operand: (float))
         right: (number))
       right: (number))))
 

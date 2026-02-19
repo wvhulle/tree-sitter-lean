@@ -20,7 +20,7 @@ Add this crate as a normal dependency in your `Cargo.toml` file.
 cargo add tree-sitter-lean4
 ```
 
-During the first build, you need this:
+During the first build, you need these binaries in your path:
 
 - C code generator `tree-sitter` (only if the `src/parser.c` is missing)
 - C compiler `cc`
@@ -75,7 +75,7 @@ nix build . --print-out-paths | cachix push wvhulle
 
 ## Development
 
-Read [writing the grammar](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html). Be careful of adding too many conflicts in the grammar as they cause exponential growth of the state space.
+Read [writing the grammar](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html). Be careful of adding conflicts in the grammar as they cause exponential growth of the state space.
 
 Use the `tree-sitter` CLI:
 
@@ -84,7 +84,28 @@ tree-sitter generate # Re-run this after every grammar rule change
 tree-sitter parse Test.lean # A long Lean file that needs to be parsed correctly
 ```
 
+## Tests
+
 Add tests for the Tree-Sitter grammar to [./test/corpus](./test/corpus).
+
+Tests are run with
+
+```bash
+tree-sitter test
+```
+
+Check the amount of failures with:
+
+```bash
+tree-sitter test --overview-only | grep ✗ | lines | length
+```
+
+Tests can be updated automatically when you change the grammar:
+
+```bash
+tree-sitter test --update
+```
+
 See [writing tests](https://tree-sitter.github.io/tree-sitter/creating-parsers/5-writing-tests.html)
 
 ## License

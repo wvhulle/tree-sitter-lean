@@ -140,10 +140,9 @@ example : ∀ x y : Nat, x + y = x + y := by
 (module
   (example
     (forall
-      (binders
-        (identifier)
-        (identifier)
-        (identifier))
+      (identifier)
+      (identifier)
+      (identifier)
       (binary_expression
         (binary_expression
           (identifier)
@@ -151,11 +150,14 @@ example : ∀ x y : Nat, x + y = x + y := by
         (binary_expression
           (identifier)
           (identifier))))
-    (by
-      (intro
-        (identifier)
+    (application
+      (application
+        (by
+          (tactic_apply
+            (identifier)
+            (identifier)))
         (identifier))
-      (rfl))))
+      (identifier))))
 
 =====
 Apply

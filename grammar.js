@@ -64,6 +64,7 @@ module.exports = grammar({
     $._atom,
     $._type_spec,
     $._name,
+    $._quantifier_binders,
   ],
 
   conflicts: $ => [
@@ -189,15 +190,17 @@ module.exports = grammar({
     // `@[simp] def f := 12` — declaration with leading attributes
     declaration: $ => seq(
       field('attributes', $.attributes),
+      repeat($._modifier),
       $._declaration,
     ),
 
     // `@[simp, inline]` or `@[extern "foo"]`
     attributes: $ => seq(
       '@', '[',
-      commaSep1(choice(
+      repeat1(choice(
         seq('extern', field('extern', $.string)),
         field('name', $._name),
+        ',',
       )),
       ']',
     ),
@@ -233,7 +236,7 @@ module.exports = grammar({
     // A single method/field definition inside a `where` block
     where_decl: $ => seq(
       field('name', $.identifier),
-      optional(field('binders', $._bracketed_binder)),
+      repeat(field('binders', choice($.identifier, $._bracketed_binder))),
       optional($._type_spec),
       ':=',
       $._layout_start,
@@ -245,7 +248,8 @@ module.exports = grammar({
     constant: $ => seq(
       'constant',
       field('name', $._name),
-      $._type_spec,
+      optional($._type_spec),
+      optional(seq(':=', field('body', $._expression))),
     ),
 
     // `axiom foo : T` — axiomatic declaration
@@ -273,6 +277,7 @@ module.exports = grammar({
     // Structure fields: `x : T` or `x : T := default` or `x := default`
     structure_field: $ => seq(
       field('name', $.identifier),
+      repeat($._bracketed_binder),
       choice(
         seq(':', field('type', $._expression), optional(seq(':=', field('default', $._expression)))),
         seq(':=', field('default', $._expression)),
@@ -291,7 +296,7 @@ module.exports = grammar({
 
     constructor: $ => seq(
       '|',
-      field('name', $.identifier),
+      field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
     ),
@@ -301,6 +306,13 @@ module.exports = grammar({
     // ============================================================
 
     binders: $ => repeat1(choice($.identifier, $._bracketed_binder)),
+
+    // Quantifier binders: `x y : Nat` or `(x : Nat) {y : Nat}`
+    // Bare identifiers can have a trailing `: Type` annotation
+    _quantifier_binders: $ => seq(
+      repeat1(choice($.identifier, $._bracketed_binder)),
+      optional($._type_spec),
+    ),
 
     _bracketed_binder: $ => choice(
       $.explicit_binder,
@@ -363,6 +375,7 @@ module.exports = grammar({
       $.identifier,
       $.escaped_identifier,
       $.number,
+      $.float,
       $.string,
       $.char,
       $.parenthesized,
@@ -480,7 +493,7 @@ module.exports = grammar({
     // Universal quantifier: `∀ x, P x`
     forall: $ => prec.right(seq(
       choice('forall', '∀'),
-      field('binders', repeat1(choice($.identifier, $._bracketed_binder))),
+      field('binders', $._quantifier_binders),
       ',',
       field('body', $._expression),
     )),
@@ -488,7 +501,7 @@ module.exports = grammar({
     // Existential quantifier: `∃ x, P x`
     exists: $ => prec.right(seq(
       choice('exists', '∃'),
-      field('binders', repeat1(choice($.identifier, $._bracketed_binder))),
+      field('binders', $._quantifier_binders),
       ',',
       field('body', $._expression),
     )),
@@ -549,6 +562,7 @@ module.exports = grammar({
       field('tactic', $.identifier),
       repeat(field('arg', choice(
         $.identifier, $.number, $.hole, $.synthetic_hole,
+        $.string, $.quoted_name, $.explicit,
         $.parenthesized, $.anonymous_constructor,
         $.tactic_config, $.by,
       ))),
@@ -581,7 +595,7 @@ module.exports = grammar({
     // `rw`/`rewrite` always take a config list, optionally with `at`
     tactic_rewrite: $ => prec.right(seq(
       choice('rw', 'rewrite'),
-      $.tactic_config,
+      optional($.tactic_config),
       optional(seq('at', repeat1(choice($.identifier, '*')))),
     )),
 
@@ -924,8 +938,9 @@ module.exports = grammar({
     // Escaped identifier: `«name with spaces»`
     escaped_identifier: _ => /«[^»]*»/,
 
+    float: _ => token(prec(1, seq(/\d+/, '.', optional(/\d+/)))),
+
     number: _ => choice(
-      /\d+\.\d+/,                // float (must precede decimal integer)
       /\d+/,                    // decimal
       /0x[0-9a-fA-F]+/,         // hex
       /0b[01]+/,                // binary

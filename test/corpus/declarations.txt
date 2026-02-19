@@ -564,7 +564,7 @@ class Quux (a : Type) where
 (module
   (structure
     name: (identifier)
-    (binders
+    binders: (binders
       (explicit_binder
         name: (identifier)
         type: (identifier)))
@@ -575,21 +575,19 @@ class Quux (a : Type) where
     fields: (structure_field
       name: (identifier)
       type: (arrow
-        (identifier)
-        (arrow
-          (identifier)
-          (identifier))))
+        domain: (identifier)
+        codomain: (arrow
+          domain: (identifier)
+          codomain: (identifier))))
     fields: (structure_field
       name: (identifier)
       default: (number))
     fields: (structure_field
-      name: (identifier))
-    fields: (implicit_binder
       name: (identifier)
-      type: (identifier))
-    (ERROR)
-    fields: (structure_field
-      name: (identifier))))
+      (implicit_binder
+        name: (identifier)
+        type: (identifier))
+      type: (identifier))))
 
 ===============
 Class No Fields
@@ -1024,7 +1022,9 @@ Dotted Name Attributes
 
 (module
   (declaration
-    (attributes
+    attributes: (attributes
+      name: (identifier)
+      name: (identifier)
       name: (identifier)
       name: (identifier))
     (definition
@@ -1151,15 +1151,16 @@ inductive FooBar where
       type: (identifier))
     constructors: (constructor
       name: (identifier)
+      name: (identifier)
       type: (identifier))
     constructors: (constructor
       name: (identifier)
       type: (arrow
-        (identifier)
-        (identifier)))
+        domain: (identifier)
+        codomain: (identifier)))
     constructors: (constructor
       name: (identifier)
-      (binders
+      binders: (binders
         (implicit_binder
           name: (identifier)
           type: (identifier))
@@ -1172,8 +1173,8 @@ inductive FooBar where
           name: (identifier)
           type: (identifier)))
       type: (arrow
-        (identifier)
-        (identifier)))))
+        domain: (identifier)
+        codomain: (identifier)))))
 
 ==============================
 Inductive Type No Constructors
@@ -1689,12 +1690,12 @@ constant C : Nat := 3
   (constant
     name: (identifier)
     type: (arrow
-      (identifier)
-      (identifier)))
+      domain: (identifier)
+      codomain: (identifier)))
   (constant
     name: (identifier)
     type: (identifier)
-    (number)))
+    body: (number)))
 
 ==========================
 Constant With Missing Type
@@ -1705,7 +1706,8 @@ constant B
 ---
 
 (module
-  (ERROR))
+  (constant
+    (identifier)))
 
 ==========================
 Constant With Missing Name
