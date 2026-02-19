@@ -25,17 +25,54 @@
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in
     {
-      packages = forAllSystems (pkgs: {
-        default = pkgs.tree-sitter.buildGrammar {
-          language = "lean";
-          version = "0.1.1";
+      packages = forAllSystems (
+        pkgs:
+        let
           src = pkgs.lib.cleanSource ./.;
-          generate = true;
-          postInstall = ''
-            mv $out/parser $out/lean.so
-          '';
-        };
-      });
+          version = "0.1.1";
+        in
+        {
+          default = pkgs.tree-sitter.buildGrammar {
+            language = "lean";
+            inherit version src;
+            generate = true;
+            postInstall = ''
+              mv $out/parser $out/lean.so
+            '';
+          };
+
+          wasm =
+            let
+              wasiCC = pkgs.pkgsCross.wasi32.stdenv.cc;
+            in
+            pkgs.stdenvNoCC.mkDerivation {
+              pname = "tree-sitter-lean-wasm";
+              inherit version src;
+
+              nativeBuildInputs = [
+                wasiCC
+                pkgs.lld
+                pkgs.nodejs
+                pkgs.tree-sitter
+              ];
+
+              buildPhase = ''
+                tree-sitter generate
+                wasm32-unknown-wasi-cc -fPIC -Os -c src/parser.c -o parser.o -I src
+                wasm32-unknown-wasi-cc -fPIC -Os -c src/scanner.c -o scanner.o -I src
+                wasm-ld --no-entry --export=tree_sitter_lean --allow-undefined -o lean.wasm *.o
+              '';
+
+              installPhase = ''
+                mkdir -p $out
+                mv lean.wasm $out/
+                if [ -d queries ]; then
+                  cp -r queries $out/
+                fi
+              '';
+            };
+        }
+      );
 
       devShells = forAllSystems (pkgs: {
         default = pkgs.mkShell {
