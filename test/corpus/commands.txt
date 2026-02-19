@@ -10,10 +10,20 @@
 ---
 
 (module
-  (hash_command (binary_expression (number) (number)))
-  (hash_command (binary_expression (number) (number)))
-  (hash_command (binary_expression (number) (number)))
-  (hash_command (identifier)))
+  (hash_command
+    (binary_expression
+      (number)
+      (number)))
+  (hash_command
+    (binary_expression
+      (number)
+      (number)))
+  (hash_command
+    (binary_expression
+      (number)
+      (number)))
+  (hash_command
+    (identifier)))
 
 ===================
 Same Line #commands
@@ -24,8 +34,12 @@ Same Line #commands
 ---
 
 (module
-  (hash_command (application (identifier) (number)))
-  (hash_command (number)))
+  (hash_command
+    (application
+      (identifier)
+      (number)))
+  (hash_command
+    (number)))
 
 ==============
 #check_failure
@@ -40,11 +54,12 @@ Same Line #commands
     (parenthesized
       (identifier)
       (type_ascription
-        type:
-          (application
-            name: (identifier)
-            arguments:
-              (parenthesized (binary_expression (identifier) (hole))))))))
+        type: (application
+          name: (identifier)
+          arguments: (parenthesized
+            (binary_expression
+              (identifier)
+              (hole))))))))
 
 =======
 Prelude
@@ -74,8 +89,10 @@ open Foo Bar Baz.Quux
   (open
     namespace: (identifier))
   (open
+    namespace: (identifier)
     namespace: (identifier))
   (open
+    namespace: (identifier)
     namespace: (identifier)
     namespace: (identifier)
     namespace: (identifier)))
@@ -92,9 +109,9 @@ open Foo in
 (module
   (open
     namespace: (identifier)
-      (definition
-          name: (identifier)
-          body: (identifier))))
+    (definition
+      name: (identifier)
+      body: (identifier))))
 
 ======================
 Open With Missing Name
@@ -104,7 +121,8 @@ open
 
 ---
 
-(module (ERROR))
+(module
+  (ERROR))
 
 ======
 Import
@@ -128,7 +146,11 @@ import Foo.Bar.Baz
 
 (module
   (import
-    module: (identifier)))
+    module: (projection
+      term: (projection
+        term: (identifier)
+        name: (identifier))
+      name: (identifier))))
 
 ========================
 Import With Missing Name
@@ -138,7 +160,8 @@ import
 
 ---
 
-(module (ERROR))
+(module
+  (ERROR))
 
 ======
 Export
@@ -162,7 +185,11 @@ export Foo ()
 
 ---
 
-(module (export (identifier) (identifier (MISSING _identifier))))
+(module
+  (export
+    (identifier)
+    (identifier
+      (MISSING _identifier))))
 
 ========================
 Export With Missing Name
@@ -172,7 +199,8 @@ export
 
 ---
 
-(module (ERROR))
+(module
+  (ERROR))
 
 ========
 Universe
@@ -184,8 +212,12 @@ universe u2 v2 w2
 ---
 
 (module
-  (universe (identifier))
-  (universe (identifier) (identifier) (identifier)))
+  (universe
+    (identifier))
+  (universe
+    (identifier)
+    (identifier)
+    (identifier)))
 
 ==========================
 Universe With Missing Name
@@ -195,7 +227,8 @@ universe
 
 ---
 
-(module (ERROR))
+(module
+  (ERROR))
 
 =========
 Universes
@@ -205,7 +238,8 @@ universes u2 v2 w2
 
 ---
 
-(module (ERROR))
+(module
+  (ERROR))
 
 ===============
 Quoted Commands
@@ -221,8 +255,16 @@ def f : Lean.Elab.Command.CommandElabM Lean.Syntax :=
 ---
 
 (module
-  (definition (identifier) (application (identifier) (identifier))
-      (quoted
-        (namespace (identifier)
-          (declaration (definition (identifier) (number)))
-         (identifier)))))
+  (definition
+    (identifier)
+    (application
+      (identifier)
+      (identifier))
+    (quoted
+      (namespace
+        (identifier)
+        (declaration
+          (definition
+            (identifier)
+            (number)))
+        (identifier)))))

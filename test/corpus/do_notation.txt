@@ -9,11 +9,10 @@ def hello : IO Unit := do
 
 (module
   (definition
-    name: (name
-      (identifier))
-    (application
-      function: (identifier)
-      argument: (identifier))
+    name: (identifier)
+    type: (application
+      name: (identifier)
+      arguments: (identifier))
     body: (do
       (do_return
         value: (parenthesized)))))
@@ -30,11 +29,10 @@ def readAndDouble : IO Nat := do
 
 (module
   (definition
-    name: (name
-      (identifier))
-    (application
-      function: (identifier)
-      argument: (identifier))
+    name: (identifier)
+    type: (application
+      name: (identifier)
+      arguments: (identifier))
     body: (do
       (let_bind
         name: (identifier)
@@ -58,17 +56,16 @@ def sumList (xs : List Nat) : IO Nat := do
 
 (module
   (definition
-    name: (name
-      (identifier))
+    name: (identifier)
     binders: (binders
       (explicit_binder
         name: (identifier)
-        (application
-          function: (identifier)
-          argument: (identifier))))
-    (application
-      function: (identifier)
-      argument: (identifier))
+        type: (application
+          name: (identifier)
+          arguments: (identifier))))
+    type: (application
+      name: (identifier)
+      arguments: (identifier))
     body: (do
       (let_mut
         name: (identifier)
@@ -100,29 +97,28 @@ def processOptions (xs : List (Option Nat)) : IO (List Nat) := do
 
 (module
   (definition
-    name: (name
-      (identifier))
+    name: (identifier)
     binders: (binders
       (explicit_binder
         name: (identifier)
-        (application
-          function: (identifier)
-          argument: (parenthesized
+        type: (application
+          name: (identifier)
+          arguments: (parenthesized
             (application
-              function: (identifier)
-              argument: (identifier))))))
-    (application
-      function: (identifier)
-      argument: (parenthesized
+              name: (identifier)
+              arguments: (identifier))))))
+    type: (application
+      name: (identifier)
+      arguments: (parenthesized
         (application
-          function: (identifier)
-          argument: (identifier))))
+          name: (identifier)
+          arguments: (identifier))))
     body: (do
       (let_mut
         name: (identifier)
-        (application
-          function: (identifier)
-          argument: (identifier))
+        type: (application
+          name: (identifier)
+          arguments: (identifier))
         value: (list))
       (for_in
         var: (identifier)
@@ -154,39 +150,38 @@ def nestedDo : IO Unit := do
 
 (module
   (definition
-    name: (name
-      (identifier))
-    (application
-      function: (identifier)
-      argument: (identifier))
+    name: (identifier)
+    type: (application
+      name: (identifier)
+      arguments: (identifier))
     body: (do
       (for_in
         var: (identifier)
         iterable: (application
-          function: (projection
-            object: (identifier)
-            field: (identifier))
-          argument: (number))
+          name: (projection
+            term: (identifier)
+            name: (identifier))
+          arguments: (number))
         body: (do
           (for_in
             var: (identifier)
             iterable: (application
-              function: (projection
-                object: (identifier)
-                field: (identifier))
-              argument: (number))
+              name: (projection
+                term: (identifier)
+                name: (identifier))
+              arguments: (number))
             body: (do
               (application
-                function: (projection
-                  object: (identifier)
-                  field: (identifier))
-                argument: (application
-                  function: (identifier)
-                  argument: (string
-                    (interpolation
-                      (identifier))
-                    (interpolation
-                      (identifier))))))))))))
+                name: (application
+                  name: (projection
+                    term: (identifier)
+                    name: (identifier))
+                  arguments: (identifier))
+                arguments: (string
+                  (interpolation
+                    (identifier))
+                  (interpolation
+                    (identifier)))))))))))
 
 =====================================
 Do with match
@@ -201,34 +196,33 @@ def describeList (xs : List Nat) : IO Unit := do
 
 (module
   (definition
-    name: (name
-      (identifier))
+    name: (identifier)
     binders: (binders
       (explicit_binder
         name: (identifier)
-        (application
-          function: (identifier)
-          argument: (identifier))))
-    (application
-      function: (identifier)
-      argument: (identifier))
+        type: (application
+          name: (identifier)
+          arguments: (identifier))))
+    type: (application
+      name: (identifier)
+      arguments: (identifier))
     body: (do
       (do_match
         scrutinees: (identifier)
         (do_match_arm
           patterns: (list)
           body: (application
-            function: (projection
-              object: (identifier)
-              field: (identifier))
-            argument: (string)))
+            name: (projection
+              term: (identifier)
+              name: (identifier))
+            arguments: (string)))
         (do_match_arm
           patterns: (hole)
           body: (application
-            function: (projection
-              object: (identifier)
-              field: (identifier))
-            argument: (string)))))))
+            name: (projection
+              term: (identifier)
+              name: (identifier))
+            arguments: (string)))))))
 
 =====================================
 Id.run do block
@@ -244,36 +238,35 @@ def buildArray : Array Nat := Id.run do
 
 (module
   (definition
-    name: (name
-      (identifier))
-    (application
-      function: (identifier)
-      argument: (identifier))
+    name: (identifier)
+    type: (application
+      name: (identifier)
+      arguments: (identifier))
     body: (application
-      function: (projection
-        object: (identifier)
-        field: (identifier))
-      argument: (do
+      name: (projection
+        term: (identifier)
+        name: (identifier))
+      arguments: (do
         (let_mut
           name: (identifier)
-          (application
-            function: (identifier)
-            argument: (identifier))
+          type: (application
+            name: (identifier)
+            arguments: (identifier))
           value: (array))
         (for_in
           var: (identifier)
           iterable: (application
-            function: (projection
-              object: (identifier)
-              field: (identifier))
-            argument: (number))
+            name: (projection
+              term: (identifier)
+              name: (identifier))
+            arguments: (number))
           body: (do
             (reassign
               name: (identifier)
               value: (application
-                function: (projection
-                  object: (identifier)
-                  field: (identifier))
-                argument: (identifier)))))
+                name: (projection
+                  term: (identifier)
+                  name: (identifier))
+                arguments: (identifier)))))
         (do_return
           value: (identifier))))))

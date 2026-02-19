@@ -10,19 +10,21 @@ def main : IO UInt32 := do
 
 (module
   (definition
+    name: (identifier)
+    type: (application
       name: (identifier)
-      type:
-        (application
-          name: (identifier)
-          arguments: (identifier))
-      body:
-        (do
-          (application
-            name: (identifier)
-            arguments: (string))
-          (application
-            name: (identifier)
-            arguments: (string)))))
+      arguments: (identifier))
+    body: (do
+      (application
+        name: (projection
+          term: (identifier)
+          name: (identifier))
+        arguments: (string))
+      (application
+        name: (projection
+          term: (identifier)
+          name: (identifier))
+        arguments: (string)))))
 
 ========
 Repeated
@@ -36,20 +38,22 @@ def main : IO UInt32 := do do
 
 (module
   (definition
+    name: (identifier)
+    type: (application
       name: (identifier)
-      type:
+      arguments: (identifier))
+    body: (do
+      (do
         (application
-          name: (identifier)
-          arguments: (identifier))
-      body:
-        (do
-          (do
-            (application
-              name: (identifier)
-              arguments: (string))
-            (application
-              name: (identifier)
-              arguments: (string))))))
+          name: (projection
+            term: (identifier)
+            name: (identifier))
+          arguments: (string))
+        (application
+          name: (projection
+            term: (identifier)
+            name: (identifier))
+          arguments: (string))))))
 
 ==========
 Let (Bind)
@@ -63,11 +67,19 @@ def f : Unit := do
 ---
 
 (module
-  (definition (identifier) (identifier)
+  (definition
+    (identifier)
+    (identifier)
     (do
-      (let_bind (identifier) (number))
-      (let_bind (identifier) (number))
-      (let (identifier) (number)))))
+      (let_bind
+        (identifier)
+        (number))
+      (let_bind
+        (identifier)
+        (number))
+      (do_let
+        (identifier)
+        (number)))))
 
 =============
 Let Annotated
@@ -80,14 +92,13 @@ def f : Unit := do
 
 (module
   (definition
-      name: (identifier)
-      type: (identifier)
-      body:
-        (do
-          (let
-            name: (identifier)
-            type: (identifier)
-            value: (number)))))
+    name: (identifier)
+    type: (identifier)
+    body: (do
+      (do_let
+        pattern: (identifier)
+        type: (identifier)
+        value: (number)))))
 
 ===========
 Let Mutable
@@ -100,14 +111,12 @@ def bar : Unit := do
 
 (module
   (definition
-      name: (identifier)
-      type: (identifier)
-      body:
-        (do
-          (let_mut
-            (parameters
-              name: (identifier))
-            value: (number)))))
+    name: (identifier)
+    type: (identifier)
+    body: (do
+      (let_mut
+        name: (identifier)
+        value: (number)))))
 
 ========
 For Loop
@@ -122,29 +131,27 @@ def foo (xs : Array Nat) : Unit := do
 
 (module
   (definition
-      name: (identifier)
-      (binders
-        (explicit_binder
+    name: (identifier)
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        type: (application
           name: (identifier)
-          type:
-            (application
-              name: (identifier)
-              arguments: (identifier))))
-      type: (identifier)
-      body:
-        (do
-          (let_mut
-            (parameters
-              name: (identifier))
-            value: (number))
-          (for_in
-            (identifier)
-            iterable: (identifier)
-            body:
-              (do
-                (reassign
-                  name: (identifier)
-                  value: (binary_expression (identifier) (identifier))))))))
+          arguments: (identifier))))
+    type: (identifier)
+    body: (do
+      (let_mut
+        name: (identifier)
+        value: (number))
+      (for_in
+        var: (identifier)
+        iterable: (identifier)
+        body: (do
+          (reassign
+            name: (identifier)
+            value: (binary_expression
+              left: (identifier)
+              right: (identifier))))))))
 
 ================================
 For Loop With Destructuring Bind
@@ -158,138 +165,27 @@ def foo (xs : Array (Nat × Nat)) : Unit := do
 
 (module
   (definition
-      name: (identifier)
-      (binders
-        (explicit_binder
+    name: (identifier)
+    (binders
+      (explicit_binder
+        name: (identifier)
+        type: (application
           name: (identifier)
-          type:
-            (application
-              name: (identifier)
-              arguments:
-                (parenthesized (binary_expression (identifier) (identifier))))))
-      type: (identifier)
-      body:
-        (do
-          (for_in
-            (anonymous_constructor (identifier) (identifier))
-            iterable: (identifier)
-            body:
-              (do
-                (application
-                  name: (identifier)
-                  arguments: (string)))))))
-
-;=========
-;Try/Catch
-;=========
-;
-;def f : IO Unit := do
-;  try
-;    println! "foo"
-;  catch ex =>
-;    throw ex
-;
-;---
-;
-;(module
-;  (declaration
-;    (def (identifier) (application (identifier) (identifier))
-;    (do
-;      (try
-;        (application (identifier) (string))
-;        (catch (identifier)
-;          (throw (identifier))))))))
-;
-;=========
-;Empty Try
-;=========
-;
-;def f : IO Unit := do
-;  try
-;  catch ex =>
-;    throw ex
-;
-;---
-;
-;(module
-;  (ERROR (identifier) (application (identifier) (identifier))
-;    (application (identifier) (identifier)) (ERROR) (throw (identifier))))
-;
-;===========
-;Try/Finally
-;===========
-;
-;def f : IO Unit := do
-;  try
-;    println! "foo"
-;  finally
-;    println! "bar"
-;
-;---
-;
-;(module
-;  (declaration
-;    (def (identifier) (application (identifier) (identifier))
-;    (do
-;      (try
-;        (application (identifier) (string))
-;        (finally
-;          (application (identifier) (string))))))))
-;
-;=================
-;Try/Catch/Finally
-;=================
-;
-;def f : IO Unit := do
-;  try
-;    println! "foo"
-;  catch ex =>
-;    throw ex
-;  finally
-;    println! "bar"
-;
-;---
-;
-;(module
-;  (declaration
-;    (def (identifier) (application (identifier) (identifier))
-;    (do
-;      (try
-;        (application (identifier) (string))
-;        (catch (identifier) (throw (identifier))))
-;        (finally (application (identifier) (string)))))))
-;
-;===================
-;No Catch or Finally
-;===================
-;
-;def f : IO Unit := do
-;  try
-;    println! "foo"
-;
-;---
-;
-;(module
-;  (ERROR (identifier) (application (identifier) (identifier))
-;    (application (identifier) (string))))
-;
-;============
-;Try One Line
-;============
-;
-;def f : IO Unit := do try println! "foo" catch ex => throw ex finally println! "bar"
-;
-;---
-;
-;(module
-;  (declaration
-;    (def (identifier) (application (identifier) (identifier))
-;    (do
-;      (try
-;        (application (identifier) (string))
-;        (catch (identifier)
-;          (throw (identifier)))
-;        (finally (application (identifier) (string))))))))
+          arguments: (parenthesized
+            (binary_expression
+              (identifier)
+              (identifier))))))
+    type: (identifier)
+    body: (do
+      (for_in
+        (anonymous_constructor
+          (identifier)
+          (identifier))
+        iterable: (identifier)
+        body: (do
+          (application
+            name: (identifier)
+            arguments: (string)))))))
 
 ======
 Return
@@ -301,7 +197,12 @@ def f : Nat := do
 ---
 
 (module
-  (definition (identifier) (identifier) (do (do_return (number)))))
+  (definition
+    (identifier)
+    (identifier)
+    (do
+      (do_return
+        (number)))))
 
 ===============
 Return One Line
@@ -330,7 +231,11 @@ def f : Unit := do
 ---
 
 (module
-  (definition (identifier) (identifier) (do (do_return))))
+  (definition
+    (identifier)
+    (identifier)
+    (do
+      (do_return))))
 
 ======
 Unless
@@ -344,19 +249,19 @@ def check : IO Unit := do
 
 (module
   (definition
+    name: (identifier)
+    type: (application
       name: (identifier)
-      type:
-        (application
+      arguments: (identifier))
+    body: (do
+      (application
+        name: (application
           name: (identifier)
-          arguments: (identifier))
-        body:
-          (do
-            (unless
-              (true)
-              (do
-                (application
-                  name: (identifier)
-                  arguments: (string)))))))
+          arguments: (true))
+        arguments: (do
+          (application
+            name: (identifier)
+            arguments: (string)))))))
 
 ================
 Do In Definition
@@ -369,39 +274,18 @@ instance : do return ToString Nat where
 
 (module
   (definition
-      type:
-        (do
-          (do_return
-            value:
-              (application
-                name: (identifier)
-                arguments: (identifier))))
-      body:
-        (where_decl
+    type: (do
+      (do_return
+        value: (application
           name: (identifier)
-          binders:
-            (explicit_binder
-              name: (identifier)
-              type: (identifier))
-          type: (identifier)
-          body: (string))))
-
-;=======
-;If/Then
-;=======
-;
-;#check (do if true then return PUnit.unit : PUnit)
-;
-;---
-;
-;(module
-;  (hash_command
-;    (parenthesized
-;      (do
-;        (conditional_when
-;          (true)
-;          (do_return (identifier))))
-;      (type_ascription (identifier)))))
+          arguments: (identifier))))
+    body: (where_decl
+      name: (identifier)
+      binders: (explicit_binder
+        name: (identifier)
+        type: (identifier))
+      type: (identifier)
+      body: (string))))
 
 ===================
 Nested If/Then/Else
@@ -415,7 +299,11 @@ Nested If/Then/Else
   (hash_command
     (if
       (true)
-      (do (if (false) (false) (false)))
+      (do
+        (do_if
+          (false)
+          (false)
+          (false)))
       (true))))
 
 ===============
@@ -428,7 +316,11 @@ Bare Identifier
 
 (module
   (hash_command
-    (parenthesized (do (true)) (type_ascription (identifier)))))
+    (parenthesized
+      (do
+        (true))
+      (type_ascription
+        (identifier)))))
 
 =================================
 If Condition Function Application
@@ -442,42 +334,11 @@ If Condition Function Application
   (hash_command
     (parenthesized
       (if
-        (application (identifier) (number))
-        (do (identifier))
+        (application
+          (identifier)
+          (number))
+        (do
+          (identifier))
         (identifier))
-      (type_ascription (identifier)))))
-
-;==========
-;Left Arrow
-;==========
-;
-;#check (do if ← foo then return PUnit.unit : PUnit)
-;
-;---
-;
-;(module
-;  (hash_command
-;    (parenthesized
-;      (do
-;        (conditional_when
-;            (unary_expression (identifier))
-;            (do_return (identifier))))
-;        (type_ascription (identifier)))))
-;
-;=====
-;Match
-;=====
-;
-;#check (do match 0 with
-;  | 0 => 1
-;  | _ => 2 : Nat)
-;
-;---
-;
-;(module
-;  (hash_command
-;    (parenthesized
-;      (do (match (number)
-;        (match_arm (number) (number))
-;        (match_arm (hole) (number))
-;        (type_ascription (identifier)))))))
+      (type_ascription
+        (identifier)))))

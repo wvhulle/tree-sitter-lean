@@ -9,7 +9,9 @@ notation " ♔ " => Foo.bar
 (module
   (notation
     (string)
-    (identifier)))
+    (projection
+      (identifier)
+      (identifier))))
 
 ===========
 Macro Rules
@@ -24,11 +26,18 @@ macro_rules
 (module
   (macro_rules
     (match_arm
-      (quoted_tactic (identifier))
-      (quoted_tactic (trivial)))
+      (quoted_tactic
+        (identifier))
+      (quoted_tactic
+        (trivial)))
     (match_arm
-      (quoted_tactic (identifier))
-      (quoted_tactic (tactic_apply (application (identifier) (identifier)))))))
+      (quoted_tactic
+        (identifier))
+      (quoted_tactic
+        (tactic_apply
+          (application
+            (identifier)
+            (identifier)))))))
 
 ======
 Syntax
@@ -40,8 +49,12 @@ syntax str : tactic
 ---
 
 (module
-  (syntax (string) (identifier))
-  (syntax (identifier) (identifier)))
+  (syntax
+    (string)
+    (identifier))
+  (syntax
+    (identifier)
+    (identifier)))
 
 =====
 Macro
@@ -52,7 +65,9 @@ macro "foo" : tactic => `(trivial)
 ---
 
 (module
-  (macro (string) (trivial)))
+  (macro
+    (string)
+    (trivial)))
 
 ====
 Elab
@@ -68,7 +83,10 @@ elab "foo" x:term : term => Lean.Elab.Term.elabTerm x none
     (identifier)
     (identifier)
     (identifier)
-    (application (identifier) (identifier) (identifier))))
+    (application
+      (identifier)
+      (identifier)
+      (identifier))))
 
 ====
 Elab
@@ -84,7 +102,10 @@ elab "foo" x:term : term => Lean.Elab.Term.elabTerm x none
     (identifier)
     (identifier)
     (identifier)
-    (application (identifier) (identifier) (identifier))))
+    (application
+      (identifier)
+      (identifier)
+      (identifier))))
 
 ========================
 Elab Optional Left Arrow
@@ -101,7 +122,10 @@ elab "foo" x:term : term <= bar => Lean.Elab.Term.elabTerm x none
     (identifier)
     (identifier)
     (identifier)
-    (application (identifier) (identifier) (identifier))))
+    (application
+      (identifier)
+      (identifier)
+      (identifier))))
 
 ======
 Mixfix
@@ -116,11 +140,21 @@ postfix:max "↑" => coe
 ---
 
 (module
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier)))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier)))
 
 ==============
 Scoped / Local
@@ -152,29 +186,75 @@ scoped postfix:max "↑" => coe
 ---
 
 (module
-  (elab (string) (identifier) (identifier) (identifier)
-    (application (identifier) (identifier) (identifier)))
-  (elab (string) (identifier) (identifier) (identifier)
-    (application (identifier) (identifier) (identifier)))
-  (syntax (string) (identifier))
-  (syntax (string) (identifier))
-  (notation (string) (number))
-  (notation (string) (number))
+  (elab
+    (string)
+    (identifier)
+    (identifier)
+    (identifier)
+    (application
+      (identifier)
+      (identifier)
+      (identifier)))
+  (elab
+    (string)
+    (identifier)
+    (identifier)
+    (identifier)
+    (application
+      (identifier)
+      (identifier)
+      (identifier)))
+  (syntax
+    (string)
+    (identifier))
+  (syntax
+    (string)
+    (identifier))
+  (notation
+    (string)
+    (number))
+  (notation
+    (string)
+    (number))
   (macro_rules
-    (match_arm (quoted_tactic (identifier)) (quoted_tactic (trivial))))
+    (match_arm
+      (quoted_tactic
+        (identifier))
+      (quoted_tactic
+        (trivial))))
   (macro_rules
-    (match_arm (quoted_tactic (identifier)) (quoted_tactic (trivial))))
+    (match_arm
+      (quoted_tactic
+        (identifier))
+      (quoted_tactic
+        (trivial))))
   (declaration
-    (attributes (identifier))
-    (definition (identifier) (number)))
+    (attributes
+      (identifier))
+    (definition
+      (identifier)
+      (number)))
   (declaration
-    (attributes (identifier))
-    (definition (identifier) (number)))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier))
-  (mixfix (string) (identifier)))
+    (attributes
+      (identifier))
+    (definition
+      (identifier)
+      (number)))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier))
+  (mixfix
+    (string)
+    (identifier)))
 
 ==================
 Builtin Initialize
@@ -186,4 +266,7 @@ builtin_initialize foo : bar ←
 ---
 
 (module
-  (builtin_initialize (identifier) (identifier) (identifier)))
+  (builtin_initialize
+    (identifier)
+    (identifier)
+    (identifier)))

@@ -21,8 +21,8 @@ import LeanPrism.Protocol
 (module
   (import
     module: (projection
-      object: (identifier)
-      field: (identifier))))
+      term: (identifier)
+      name: (identifier))))
 
 =====================================
 Deep nested import path
@@ -35,10 +35,10 @@ import LeanPrism.SemanticTableau.InfoTreeParser
 (module
   (import
     module: (projection
-      object: (projection
-        object: (identifier)
-        field: (identifier))
-      field: (identifier))))
+      term: (projection
+        term: (identifier)
+        name: (identifier))
+      name: (identifier))))
 
 =====================================
 Multiple imports
@@ -55,11 +55,11 @@ import LeanPrism.SemanticTableau.InfoTreeParser
     module: (identifier))
   (import
     module: (projection
-      object: (identifier)
-      field: (identifier)))
+      term: (identifier)
+      name: (identifier)))
   (import
     module: (projection
-      object: (projection
-        object: (identifier)
-        field: (identifier))
-      field: (identifier))))
+      term: (projection
+        term: (identifier)
+        name: (identifier))
+      name: (identifier))))

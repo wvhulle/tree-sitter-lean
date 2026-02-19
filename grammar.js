@@ -1,7 +1,7 @@
 /**
  * @file Lean 4 grammar for tree-sitter
  * @license MIT
- * 
+ *
  * Based on best practices from tree-sitter-javascript and tree-sitter-rust
  */
 
@@ -56,7 +56,6 @@ module.exports = grammar({
   // Supertype nodes for better queries
   supertypes: $ => [
     $._expression,
-    $._command,
     $._declaration,
   ],
 
@@ -67,13 +66,15 @@ module.exports = grammar({
     $._name,
   ],
 
-  conflicts: $ => [],
+  conflicts: $ => [
+    [$.where_decl],
+  ],
 
   rules: {
     // ============================================================
     // Module Structure
     // ============================================================
-    
+
     module: $ => seq(
       optional($.prelude),
       repeat($.import),
@@ -91,24 +92,30 @@ module.exports = grammar({
     // ============================================================
 
     _command: $ => choice(
-      $._declaration,
+      // Declarations and example with optional leading modifiers
+      seq(repeat($._modifier), choice($._declaration, $.declaration, $.example)),
+      // Other commands (no modifiers)
       $.namespace,
       $.section,
       $.end,
       $.open,
+      $.export,
       $.variable,
       $.universe,
       $.attribute,
       $.notation,
       $.hash_command,
-      $.example,
     ),
+
+    // Modifier keywords consumed transparently (no node created)
+    _modifier: _ => choice('noncomputable', 'partial', 'protected', 'private', 'unsafe'),
+
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
     namespace: $ => seq('namespace', field('name', $._name)),
-    
+
     section: $ => seq('section', optional(field('name', $.identifier))),
-    
+
     // End: `end` or `end Foo` or `end Foo.Bar.Baz`
     end: $ => seq('end', optional(field('name', $._name))),
 
@@ -120,8 +127,15 @@ module.exports = grammar({
       optional(choice(
         seq('hiding', repeat1(field('hiding', $._name))),
         seq('(', repeat1(field('only', $._name)), ')'),
-        seq('in', $._expression),
+        seq('in', $._command),
       )),
+    ),
+
+    // `export Foo (bar baz)`
+    export: $ => seq(
+      'export',
+      field('class', $.identifier),
+      '(', repeat1($.identifier), ')',
     ),
 
     variable: $ => seq('variable', repeat1($._bracketed_binder)),
@@ -164,21 +178,80 @@ module.exports = grammar({
 
     _declaration: $ => choice(
       $.definition,
+      alias($._instance_decl, $.definition),
+      $.constant,
+      $.axiom,
       $.structure,
       $.inductive,
     ),
 
-    // Unified definition rule for def, theorem, lemma, abbrev, instance
-    // Supports both `:= body` and pattern-matching `| pat => body` syntax.
+    // `@[simp] def f := 12` — declaration with leading attributes
+    declaration: $ => seq(
+      field('attributes', $.attributes),
+      $._declaration,
+    ),
+
+    // `@[simp, inline]` or `@[extern "foo"]`
+    attributes: $ => seq(
+      '@', '[',
+      commaSep1(choice(
+        seq('extern', field('extern', $.string)),
+        field('name', $._name),
+      )),
+      ']',
+    ),
+
+    // def/theorem/lemma/abbrev — name is required, no ambiguity with binders.
+    // Modifiers (noncomputable, partial, etc.) are consumed transparently.
     definition: $ => seq(
-      field('kind', choice('def', 'theorem', 'lemma', 'abbrev', 'instance')),
+      field('kind', choice('def', 'theorem', 'lemma', 'abbrev')),
       field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       choice(
         seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
+        seq('where', $._layout_start, repeat1(seq(field('body', $.where_decl), optional($._layout_semicolon))), optional($._layout_end)),
         repeat1($.match_arm),
       ),
+    ),
+
+    // instance — name is optional; aliased to `definition` in the parse tree.
+    // Instance binders are always bracketed (no bare identifier ambiguity with name).
+    _instance_decl: $ => seq(
+      'instance',
+      optional(field('name', $.identifier)),
+      repeat(field('binders', $._bracketed_binder)),
+      optional($._type_spec),
+      choice(
+        seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
+        seq('where', $._layout_start, repeat1(seq(field('body', $.where_decl), optional($._layout_semicolon))), optional($._layout_end)),
+        repeat1($.match_arm),
+      ),
+    ),
+
+    // A single method/field definition inside a `where` block
+    where_decl: $ => seq(
+      field('name', $.identifier),
+      optional(field('binders', $._bracketed_binder)),
+      optional($._type_spec),
+      ':=',
+      $._layout_start,
+      field('body', $._expression),
+      optional($._layout_end),
+    ),
+
+    // `constant foo : T` — opaque constant declaration
+    constant: $ => seq(
+      'constant',
+      field('name', $._name),
+      $._type_spec,
+    ),
+
+    // `axiom foo : T` — axiomatic declaration
+    axiom: $ => seq(
+      'axiom',
+      field('name', $._name),
+      $._type_spec,
     ),
 
     structure: $ => seq(
@@ -190,18 +263,19 @@ module.exports = grammar({
       optional(seq(
         choice(':=', 'where'),
         $._layout_start,
-        repeat(seq($.structure_field, optional($._layout_semicolon))),
+        repeat(seq(field('fields', choice($.structure_field, $._bracketed_binder)), optional($._layout_semicolon))),
         optional($._layout_end),
       )),
       optional(seq('deriving', commaSep1($.identifier))),
     ),
 
-    // Structure fields are separated by layout semicolons (newlines at same indent)
+    // Structure fields: `x : T` or `x : T := default` or `x := default`
     structure_field: $ => seq(
       field('name', $.identifier),
-      ':',
-      field('type', $._expression),
-      optional(seq(':=', field('default', $._expression))),
+      choice(
+        seq(':', field('type', $._expression), optional(seq(':=', field('default', $._expression)))),
+        seq(':=', field('default', $._expression)),
+      ),
     ),
 
     inductive: $ => seq(
@@ -236,7 +310,7 @@ module.exports = grammar({
     explicit_binder: $ => seq(
       '(',
       repeat1(field('name', $.identifier)),
-      $._type_spec,
+      optional($._type_spec),
       optional(seq(':=', field('default', $._expression))),
       ')',
     ),

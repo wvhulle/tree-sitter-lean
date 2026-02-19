@@ -7,7 +7,11 @@ String
 
 ---
 
-(module (hash_command (string)) (hash_command (string)))
+(module
+  (hash_command
+    (string))
+  (hash_command
+    (string)))
 
 ============
 Empty String
@@ -17,7 +21,9 @@ Empty String
 
 ---
 
-(module (hash_command (string)))
+(module
+  (hash_command
+    (string)))
 
 ================
 Escape Sequences
@@ -60,7 +66,11 @@ Char
 
 ---
 
-(module (hash_command (char)) (hash_command (char)))
+(module
+  (hash_command
+    (char))
+  (hash_command
+    (char)))
 
 ====================
 Char Escape Sequence
@@ -70,7 +80,9 @@ Char Escape Sequence
 
 ---
 
-(module (hash_command (char (escape_sequence))))
+(module
+  (hash_command
+    (char)))
 
 ========
 Non-Char
@@ -80,7 +92,10 @@ Non-Char
 
 ---
 
-(module (hash_command (ERROR) (identifier)))
+(module
+  (hash_command
+    (ERROR)
+    (identifier)))
 
 ==================================
 Non-Interpolation in Normal String
@@ -90,7 +105,13 @@ Non-Interpolation in Normal String
 
 ---
 
-(module (hash_command (application (identifier) (string))))
+(module
+  (hash_command
+    (application
+      (identifier)
+      (string
+        (interpolation
+          (identifier))))))
 
 =============
 Interpolation
@@ -102,8 +123,13 @@ Interpolation
 
 (module
   (hash_command
-    (application (identifier)
-      (interpolated_string (interpolation (identifier))))))
+    (application
+      (application
+        (identifier)
+        (identifier))
+      (string
+        (interpolation
+          (identifier))))))
 
 =======================================
 Interpolation With Function Application
@@ -115,9 +141,15 @@ Interpolation With Function Application
 
 (module
   (hash_command
-    (application (identifier)
-      (interpolated_string
-        (interpolation (application (identifier) (number)))))))
+    (application
+      (application
+        (identifier)
+        (identifier))
+      (string
+        (interpolation
+          (application
+            (identifier)
+            (number)))))))
 
 ===================================
 Interpolation With Escape Sequences
@@ -129,14 +161,17 @@ Interpolation With Escape Sequences
 
 (module
   (hash_command
-    (interpolated_string
-      (escape_sequence)
-      (escape_sequence)
-      (escape_sequence)
-      (escape_sequence)
-      (escape_sequence)
-      (escape_sequence)
-      (interpolation (identifier)))))
+    (application
+      (identifier)
+      (string
+        (escape_sequence)
+        (escape_sequence)
+        (escape_sequence)
+        (escape_sequence)
+        (escape_sequence)
+        (escape_sequence)
+        (interpolation
+          (identifier))))))
 
 ==============
 String With --
@@ -148,5 +183,7 @@ String With --
 ---
 
 (module
-  (hash_command (string))
-  (hash_command (string)))
+  (hash_command
+    (string))
+  (hash_command
+    (string)))
