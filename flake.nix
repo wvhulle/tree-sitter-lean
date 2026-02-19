@@ -30,66 +30,15 @@
         let
           src = pkgs.lib.cleanSource ./.;
           version = "0.1.1";
-
-          # Run tree-sitter generate once, reuse the C sources for all targets
-          generatedSrc = pkgs.stdenvNoCC.mkDerivation {
-            pname = "tree-sitter-lean-generated";
-            inherit version src;
-            nativeBuildInputs = [
-              pkgs.nodejs
-              pkgs.tree-sitter
-            ];
-            buildPhase = ''
-              tree-sitter generate
-            '';
-            installPhase = ''
-              cp -r . $out
-            '';
-          };
         in
-        rec {
-          native = pkgs.tree-sitter.buildGrammar {
+        {
+          default = pkgs.tree-sitter.buildGrammar {
             language = "lean";
-            inherit version;
-            src = generatedSrc;
-            generate = false;
+            inherit version src;
             postInstall = ''
               mv $out/parser $out/lean.so
             '';
           };
-
-          wasm =
-            let
-              wasiCC = pkgs.pkgsCross.wasi32.stdenv.cc;
-            in
-            pkgs.stdenvNoCC.mkDerivation {
-              pname = "tree-sitter-lean-wasm";
-              inherit version;
-              src = generatedSrc;
-
-              nativeBuildInputs = [
-                wasiCC
-                pkgs.lld
-              ];
-
-              buildPhase = ''
-                wasm32-unknown-wasi-cc -fPIC -Os -c src/parser.c -o parser.o -I src
-                wasm32-unknown-wasi-cc -fPIC -Os -c src/scanner.c -o scanner.o -I src
-                wasm-ld --no-entry --export=tree_sitter_lean --allow-undefined -o lean.wasm *.o
-              '';
-
-              installPhase = ''
-                mkdir -p $out
-                mv lean.wasm $out/
-                if [ -d queries ]; then
-                  cp -r queries $out/
-                fi
-              '';
-            };
-
-          source = generatedSrc;
-
-          default = native;
         }
       );
 
