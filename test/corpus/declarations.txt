@@ -1,290 +1,1745 @@
-=====================================
-Abbrev definition
-=====================================
+======
+Simple
+======
 
-abbrev MyNat := Nat
+def sampleFunction1 x := x*x + 3
+
+def result1 := sampleFunction1 4573
+
+theorem foo : p := sorry
+
+---
+
+(module
+  (definition (identifier)
+    (binders (identifier))
+    (binary_expression (binary_expression (identifier) (identifier))
+    (number)))
+  (definition (identifier)
+    (application (identifier) (number)))
+  (definition (identifier) (identifier) (sorry)))
+
+=========
+Annotated
+=========
+
+def sampleFunction2 (x : Nat) := 2*x*x - x + 3
 
 ---
 
 (module
   (definition
-    name: (name
-      (identifier))
-    body: (identifier)))
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      body:
+        (binary_expression
+          (binary_expression
+            (binary_expression
+            (binary_expression (number) (identifier))
+              (identifier))
+              (identifier))
+          (number))))
 
-=====================================
-Abbrev with application body
-=====================================
+==================
+Multiple Annotated
+==================
 
-abbrev DiagnosticsArray := Array Nat
-
----
-
-(module
-  (definition
-    name: (name
-      (identifier))
-    body: (application
-      function: (identifier)
-      argument: (identifier))))
-
-=====================================
-Def with explicit binder
-=====================================
-
-def double (n : Nat) : Nat := n + n
+def sampleFunction2 (x y : Nat) := x + y
 
 ---
 
 (module
   (definition
-    name: (name
-      (identifier))
-    binders: (binders
-      (explicit_binder
-        name: (identifier)
-        (identifier)))
-    (identifier)
-    body: (binary_expression
-      left: (identifier)
-      right: (identifier))))
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          name: (identifier)
+          type: (identifier)))
+      body:
+        (binary_expression (identifier) (identifier))))
 
-=====================================
-Def with multiple binders of different kinds
-=====================================
+==================
+Implicit Arguments
+==================
 
-def compose {α β γ : Type} (f : β → γ) (g : α → β) : α → γ :=
-  fun x => f (g x)
+def foo {a} {b c : Nat} v w (x y) (z : Nat) := a + b + v + w + x + y
 
 ---
 
 (module
   (definition
-    name: (name
-      (identifier))
-    binders: (binders
-      (implicit_binder
-        name: (identifier)
-        name: (identifier)
-        name: (identifier)
-        (identifier))
-      (explicit_binder
-        name: (identifier)
-        (arrow
-          domain: (identifier)
-          codomain: (identifier)))
-      (explicit_binder
-        name: (identifier)
-        (arrow
-          domain: (identifier)
-          codomain: (identifier))))
-    (arrow
-      domain: (identifier)
-      codomain: (identifier))
-    body: (fun
-      binders: (identifier)
-      body: (application
-        function: (identifier)
-        argument: (parenthesized
-          (application
-            function: (identifier)
-            argument: (identifier)))))))
+      name: (identifier)
+        (binders
+          (implicit_binder
+            name: (identifier))
+          (implicit_binder
+            name: (identifier)
+            name: (identifier)
+            type: (identifier))
+          (identifier)
+          (identifier)
+          (explicit_binder
+            name: (identifier)
+            name: (identifier))
+          (explicit_binder
+            name: (identifier)
+            type: (identifier)))
+      body:
+        (binary_expression
+          (binary_expression
+            (binary_expression
+              (binary_expression
+                (binary_expression
+                  (identifier)
+                  (identifier))
+                (identifier))
+              (identifier))
+            (identifier))
+          (identifier))))
 
-=====================================
-Def with instance binder
-=====================================
+============================
+Typeclass Resolved Arguments
+============================
 
-def sumList [Add α] [Zero α] (xs : List α) : α :=
-  xs.foldl (· + ·) 0
+def foo [Bar x] [y : Baz] : x := 1
 
 ---
 
 (module
   (definition
-    name: (name
-      (identifier))
-    binders: (binders
-      (instance_binder
-        type: (application
-          function: (identifier)
-          argument: (identifier)))
-      (instance_binder
-        type: (application
-          function: (identifier)
-          argument: (identifier)))
-      (explicit_binder
-        name: (identifier)
+      name: (identifier)
+      (binders
+        (instance_binder
+          type:
+            (application
+              name: (identifier)
+              arguments: (identifier)))
+        (instance_binder
+          name: (identifier)
+          type: (identifier)))
+      type: (identifier)
+      body: (number)))
+
+====================
+First Class Function
+====================
+
+def twice (f : Nat → Nat) (a : Nat) :=
+  f (f a)
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type: (arrow (identifier) (identifier)))
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      body:
         (application
-          function: (identifier)
-          argument: (identifier))))
-    (identifier)
-    body: (application
-      function: (application
-        function: (projection
-          object: (identifier)
-          field: (identifier))
-        argument: (parenthesized
-          (binary_expression
-            left: (hole)
-            right: (hole))))
-      argument: (number))))
+          name: (identifier)
+          arguments:
+            (parenthesized
+              (application
+                name: (identifier)
+                arguments: (identifier))))))
 
-=====================================
-Def with pattern-matching arms
-=====================================
+====================
+Function Return Type
+====================
 
-def factorial : Nat → Nat
-  | 0 => 1
-  | n+1 => (n + 1) * factorial n
+def foo : Nat -> Nat := id
 
 ---
 
 (module
   (definition
-    name: (name
-      (identifier))
-    (arrow
-      domain: (identifier)
-      codomain: (identifier))
-    (match_arm
-      patterns: (number)
-      body: (number))
-    (match_arm
-      patterns: (binary_expression
-        left: (identifier)
-        right: (number))
-      body: (binary_expression
-        left: (parenthesized
-          (binary_expression
-            left: (identifier)
-            right: (number)))
-        right: (application
-          function: (identifier)
-          argument: (identifier))))))
+      name: (identifier)
+      type: (arrow (identifier) (identifier))
+      body: (identifier)))
 
-=====================================
-Def with doc comment
-=====================================
+==================================
+Multiargument Function Return Type
+==================================
 
-/-- Checks if a number is zero. -/
-def isZero (n : Nat) : Bool := n == 0
+def foo : Nat -> Nat -> Nat -> Nat := id
 
 ---
 
 (module
-  (comment)
   (definition
-    name: (name
-      (identifier))
-    binders: (binders
-      (explicit_binder
-        name: (identifier)
+      name: (identifier)
+      type:
+        (arrow
+          (identifier)
+          (arrow
+            (identifier)
+            (arrow (identifier) (identifier))))
+      body: (identifier)))
+
+=============
+Def of Struct
+=============
+
+def f : Foo where
+  bar := 3
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type: (identifier)
+      body:
+        (where_decl
+          name: (identifier)
+          body: (number))))
+
+==================
+Match Syntax Sugar
+==================
+
+def foo : Nat → Nat
+  | 0 => 2
+  | 2 => 3
+  | _ => 5
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type: (arrow (identifier) (identifier))
+      body:
+        (match_arm
+          lhs: (number)
+          (number))
+      body:
+        (match_arm
+          lhs: (number)
+          (number))
+      body:
+        (match_arm
+          lhs: (hole)
+          (number))))
+
+==========================================
+Match Syntax Sugar With Anonymous Function
+==========================================
+
+def foo : Nat -> Bool :=
+  fun
+    | 0 => true
+    | _ => false
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type: (arrow (identifier) (identifier))
+      body:
+        (fun
+          lhs: (number)
+          (true)
+          lhs: (hole)
+          (false))))
+
+=======================
+Multimatch Syntax Sugar
+=======================
+
+def foo : Nat → Nat -> Nat
+  | 0, foo => 2
+  | 2, bar => 3
+  | _, _ => 5
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type: (arrow (identifier) (arrow (identifier) (identifier)))
+      body:
+        (match_arm
+          lhs: (number)
+          lhs: (identifier)
+          (number))
+      body:
+        (match_arm
+          lhs: (number)
+          lhs: (identifier)
+          (number))
+      body:
+        (match_arm
+          lhs: (hole)
+          lhs: (hole)
+          (number))))
+
+============
+Conditionals
+============
+
+def sampleFunction3 (x : Int) :=
+if x > 100 then
+  2*x*x - x + 3
+else
+  2*x*x + x - 37
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      body:
+        (if (binary_expression (identifier) (number))
+            (binary_expression
+              (binary_expression
+                (binary_expression
+                  (binary_expression (number) (identifier))
+                  (identifier))
+                (identifier))
+              (number))
+            (binary_expression
+              (binary_expression
+                (binary_expression
+                  (binary_expression (number) (identifier))
+                  (identifier))
+                (identifier))
+              (number)))))
+
+=======
+Theorem
+=======
+
+theorem twiceAdd2 (a : Nat) : twice (fun x => x + 2) a = a + 4 :=
+-- The proof is by reflexivity. Lean "symbolically" reduces both sides of the equality
+-- until they are identical.
+  rfl
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      type:
+        (binary_expression
+          (application
+            name: (identifier)
+            arguments:
+              (parenthesized
+                (fun
+                  (parameters
+                    name: (identifier))
+                  (binary_expression (identifier) (number))))
+            arguments:
+              (identifier))
+          (binary_expression (identifier) (number)))
+        (comment) (comment)
+      body:
         (identifier)))
-    (identifier)
-    body: (binary_expression
-      left: (identifier)
-      right: (number))))
 
-=====================================
-Structure definition with deriving
-=====================================
+============================
+Theorem With Expression Body
+============================
 
-structure Point where
-  x : Nat
-  y : Nat
-  deriving Inhabited, Repr
+theorem bar : 2 * 3 = 3 * 2 := Nat.mul_comm 2 3
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type:
+        (binary_expression
+          (binary_expression (number) (number))
+          (binary_expression (number) (number)))
+      body:
+        (application
+          name: (identifier)
+          arguments: (number)
+          arguments: (number))))
+
+=======================
+Theorem With Match Body
+=======================
+
+theorem foo {p : α × β} :
+  p = p ↔ p = p
+  | (p1, p2), (q1, q2) => sorry
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      (binders
+        (implicit_binder
+          name: (identifier)
+          type: (binary_expression (identifier) (identifier))))
+      type:
+        (binary_expression
+          (binary_expression
+            (identifier)
+            (binary_expression (identifier) (identifier)))
+          (identifier))
+      body:
+        (match_arm
+          lhs: (parenthesized (identifier) (tuple_tail (identifier)))
+          lhs: (parenthesized (identifier) (tuple_tail (identifier)))
+          (sorry))))
+
+====================
+Theorem Missing Type
+====================
+
+theorem foo := sorry
+
+---
+
+(module (ERROR (identifier) (sorry)))
+
+=========
+Structure
+=========
+
+structure Point (α : Type u) where
+  w : String := "foo"
+  x : α
+  y : Foo Bar Baz Quux
+  z := 0
 
 ---
 
 (module
   (structure
-    name: (identifier)
-    (structure_field
       name: (identifier)
-      type: (identifier))
-    (structure_field
-      name: (identifier)
-      type: (identifier))
-    (identifier)
-    (identifier)))
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type:
+            (application
+              name: (identifier)
+              arguments: (identifier))))
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier)
+          default: (string))
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier))
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier)) fields: (structure_field name: (identifier))
+      fields:
+        (structure_field
+          name: (identifier)) fields: (structure_field name: (identifier)) fields: (structure_field name: (identifier)
+          default: (number))))
 
-=====================================
-Structure with generic type fields
-=====================================
+=================
+Structure Extends
+=================
 
-structure Pair (α β : Type) where
-  fst : α
-  snd : β
+structure Bar extends Foo where
+  bit : Bool
+
+class Baz extends Quux where
+  bit : Bool
 
 ---
 
 (module
   (structure
-    name: (identifier)
-    binders: (binders
-      (explicit_binder
-        name: (identifier)
-        name: (identifier)
-        (identifier)))
-    (structure_field
       name: (identifier)
-      type: (identifier))
-    (structure_field
+      extends: (identifier)
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier)))
+  (structure
+      name: (identifier)
+      extends: (identifier)
+      fields: (structure_field name: (identifier) type: (identifier))))
+
+==========================
+Structure Multiple Extends
+==========================
+
+structure Bar extends Foo, Bar α where
+  bit : Bool
+
+---
+
+(module
+  (structure
+      name: (identifier)
+      extends: (identifier)
+      extends:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier))))
+
+===================
+Structure No Fields
+===================
+
+structure Foo where
+
+---
+
+(module
+  (structure
+      name: (identifier)))
+
+=====
+Class
+=====
+
+class Quux (a : Type) where
+  foo : String := "foo"
+  add : a -> a -> a
+  bar := 0
+  baz {x : String} : String
+
+---
+
+(module
+  (structure
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier)
+          default: (string))
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (arrow (identifier) (arrow (identifier) (identifier))))
+      fields:
+        (structure_field
+          name: (identifier)
+          default: (number))
+      fields:
+        (structure_field
+          name: (identifier)) fields: (implicit_binder name: (identifier) type: (identifier)) (ERROR) fields: (structure_field name:
+          (identifier))))
+
+===============
+Class No Fields
+===============
+
+class Foo where
+
+---
+
+(module
+  (structure
+      name: (identifier)))
+
+========
+Instance
+========
+
+instance : ToString Foo where
+  toString (d : Foo) : String := "Foo"
+
+---
+
+(module
+  (definition
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (where_decl
+          name: (identifier)
+          binders:
+            (explicit_binder
+              name: (identifier)
+              type: (identifier))
+          type: (identifier)
+          body: (string))))
+
+==============
+Named Instance
+==============
+
+instance toStringFoo : ToString Foo where
+  toString (d : Foo) : String := "Foo"
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (where_decl
+          name: (identifier)
+          binders:
+            (explicit_binder
+              name: (identifier)
+              type: (identifier))
+          type: (identifier)
+          body: (string))))
+
+========================
+Instance With Parameters
+========================
+
+instance {f : Foo} (g : Bar 3) : Quux where
+  foo := f
+
+---
+
+(module
+  (definition
+      (binders
+        (implicit_binder
+          name: (identifier)
+          type: (identifier))
+        (explicit_binder
+          name: (identifier)
+          type:
+            (application
+              name: (identifier)
+              arguments: (number))))
+      type: (identifier)
+      body:
+        (where_decl
+          name: (identifier)
+          body: (identifier))))
+
+================
+Chained Instance
+================
+
+instance [Inhabited b] : Inhabited (a -> b) where
+  default := fun _ => arbitrary
+
+---
+
+(module
+  (definition
+      (binders
+        (instance_binder
+          type:
+            (application
+              name: (identifier)
+              arguments: (identifier))))
+      type:
+        (application
+          name: (identifier)
+          arguments: (parenthesized (arrow (identifier) (identifier))))
+      body:
+        (where_decl
+          name: (identifier)
+          body:
+            (fun
+              (parameters (hole))
+              (identifier)))))
+
+===================================
+Instance With Inductive Constructor
+===================================
+
+instance : Inhabited Nat := ⟨0⟩
+
+---
+
+(module
+  (definition
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body: (anonymous_constructor (number))))
+
+==============================
+Instance With Field Definition
+==============================
+
+instance : Add Foo := Foo.add
+
+---
+
+(module
+  (definition
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body: (identifier)))
+
+========================================
+Instance Field With Function Return Type
+========================================
+
+instance : ToString Foo where
+  toString : Foo → String := λ f => s!"Foo"
+
+---
+
+(module
+  (definition
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (where_decl
+          name: (identifier)
+          type: (arrow (identifier) (identifier))
+          body:
+            (fun
+              (parameters name: (identifier))
+              (interpolated_string)))))
+
+==================================
+Instance Field Without Return Type
+==================================
+
+instance : ToString Foo where
+  toString d := "Foo"
+
+---
+
+(module
+  (definition
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (where_decl
+          name: (identifier)
+          binders: (identifier)
+          body: (string))))
+
+================================
+Instance With Match Syntax Sugar
+================================
+
+instance : ToString Foo where
+  toString
+  | _ => "foo"
+
+---
+
+(module
+  (definition
+      type:
+        (application
+          name: (identifier)
+          arguments: (identifier))
+      body:
+        (where_decl
+          name: (identifier)
+          body:
+            (match_arm
+              lhs: (hole)
+              (string)))))
+
+=======
+Example
+=======
+
+example : (fun x => x * 2) 4 < 3 = false := rfl
+
+---
+
+(module
+  (example
+      (binary_expression
+        (binary_expression
+          (application
+            (parenthesized
+              (fun (parameters (identifier))
+                (binary_expression (identifier) (number)))) (number))
+          (number))
+        (false))
+      (identifier)))
+
+=======================
+Example With Parameters
+=======================
+
+example {G : Type} [Add G] (g : G) : g + g = g + g := rfl
+
+---
+
+(module
+  (example
+      (binders
+        (implicit_binder
+          name: (identifier)
+          type: (identifier))
+        (instance_binder
+          type:
+            (application
+              name: (identifier)
+              arguments: (identifier)))
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      type:
+        (binary_expression
+          (binary_expression (identifier) (identifier))
+          (binary_expression (identifier) (identifier)))
+      body:
+        (identifier)))
+
+======================================================
+Noncomputable / Partial / Protected / Private / Unsafe
+======================================================
+
+partial def foo := 12
+
+partial def g x : Nat := g (x + 1)
+
+noncomputable def foo := 12
+
+protected unsafe def foo := 12
+
+unsafe inductive Foo | foo
+
+private structure Foo where x : Nat
+
+protected class Bar where x : Nat
+
+protected instance : Quux where x := 2
+
+noncomputable instance : Foo where x := 2
+
+private theorem bar : 2 = 2 := rfl
+
+protected example : 2 = 2 := rfl
+
+noncomputable example : 2 = 2 := rfl
+
+protected constant FooBar : Nat
+
+noncomputable constant FooBar : Nat
+
+---
+
+(module
+  (definition (identifier) (number))
+  (definition (identifier)
+      (binders (identifier))
+      (identifier)
+      (application
+        (identifier)
+        (parenthesized (binary_expression (identifier) (number)))))
+  (definition (identifier) (number))
+  (definition (identifier) (number))
+  (inductive (identifier) (constructor (identifier)))
+  (structure (identifier) (structure_field (identifier) (identifier)))
+  (structure (identifier) (structure_field (identifier) (identifier)))
+  (definition (identifier) (where_decl (identifier) (number)))
+  (definition (identifier) (where_decl (identifier) (number)))
+  (definition (identifier) (binary_expression (number) (number)) (identifier))
+  (example (binary_expression (number) (number)) (identifier))
+  (example (binary_expression (number) (number)) (identifier))
+  (constant (identifier) (identifier))
+  (constant (identifier) (identifier)))
+
+==========
+Attributes
+==========
+
+@[reducible] def f := 12
+
+@[inline] instance : Foo := ⟨7⟩
+
+@[simp] theorem twotwo : 2 = 2 := rfl
+
+@[inline] constant FooBar : Nat
+
+---
+
+(module
+  (declaration
+    (attributes
+      name: (identifier))
+    (def
+      name: (identifier)
+      body: (number)))
+  (declaration
+    (attributes
+      name: (identifier))
+    (instance
+      type: (identifier)
+      body: (anonymous_constructor (number))))
+  (declaration
+    (attributes
+      name: (identifier))
+    (theorem
+      name: (identifier)
+      type: (binary_expression (number) (number))
+      body: (identifier)))
+  (declaration
+    (attributes
+      name: (identifier))
+    (constant
       name: (identifier)
       type: (identifier))))
 
-=====================================
-Inductive type
-=====================================
+===================
+Multiple Attributes
+===================
 
-inductive Tree (α : Type) where
-  | leaf : Tree α
-  | node : Tree α → α → Tree α → Tree α
+@[reducible, inline] def f := 12
+
+---
+
+(module
+  (declaration
+    (attributes
+      name: (identifier)
+      name: (identifier))
+    (def
+      name: (identifier)
+      body: (number))))
+
+======================
+Dotted Name Attributes
+======================
+
+@[foo.bar baz.quux] def f := 12
+
+---
+
+(module
+  (declaration
+    (attributes
+      name: (identifier)
+      name: (identifier))
+    (def
+      name: (identifier)
+      body: (number))))
+
+=================
+Missing Attribute
+=================
+
+@[] def f := 12
+
+---
+
+(module
+  (declaration
+    (attributes
+      name: (identifier (MISSING _identifier)))
+    (def
+      name: (identifier)
+      body: (number))))
+
+================
+Extern Attribute
+================
+
+@[extern "foo"] def f := 12
+
+---
+
+(module
+  (declaration
+    (attributes
+      extern: (string))
+    (def
+      name: (identifier)
+      body: (number))))
+
+==============================
+Explicit Attribute Declaration
+==============================
+
+attribute [reducible] f
+attribute [simp, inline] Foo
+
+---
+
+(module
+  (attribute
+    name: (identifier)
+    term: (identifier))
+  (attribute
+    name: (identifier)
+    name: (identifier)
+    term: (identifier)))
+
+==========================
+Explicit Attribute Removal
+==========================
+
+attribute [-reducible] f
+attribute [simp, -inline, -reducible] Foo
+
+---
+
+(module
+  (attribute
+    name: (identifier)
+    term: (identifier))
+  (attribute
+    name: (identifier)
+    name: (identifier)
+    name: (identifier)
+    term: (identifier)))
+
+====================================
+Empty Explicit Attribute Declaration
+====================================
+
+attribute [] f
+
+---
+
+(module (attribute (identifier (MISSING _identifier)) (identifier)))
+
+======================
+Partial With Attribute
+======================
+
+@[reducible] partial def f := 12
+
+---
+
+(module
+  (declaration
+    (attributes
+      name: (identifier))
+    (def
+      name: (identifier)
+      body: (number))))
+
+==============
+Inductive Type
+==============
+
+inductive FooBar where
+  | foo : FooBar
+  | bar.baz : FooBar
+  | spam : Nat → FooBar
+  | quux {T: Type} [Add T] (x y : Nat) : Nat → FooBar
 
 ---
 
 (module
   (inductive
-    name: (identifier)
-    binders: (binders
-      (explicit_binder
-        name: (identifier)
-        (identifier)))
-    (constructor
       name: (identifier)
-      (application
-        function: (identifier)
-        argument: (identifier)))
-    (constructor
-      name: (identifier)
-      (arrow
-        domain: (application
-          function: (identifier)
-          argument: (identifier))
-        codomain: (arrow
-          domain: (identifier)
-          codomain: (arrow
-            domain: (application
-              function: (identifier)
-              argument: (identifier))
-            codomain: (application
-              function: (identifier)
-              argument: (identifier))))))))
+      constructors:
+        (constructor
+          name: (identifier)
+          type: (identifier))
+      constructors:
+        (constructor
+          name: (identifier)
+          type: (identifier))
+      constructors:
+        (constructor
+          name: (identifier)
+          type:
+            (arrow (identifier) (identifier)))
+      constructors:
+        (constructor
+          name: (identifier)
+          (binders
+            (implicit_binder
+              name: (identifier)
+              type: (identifier))
+            (instance_binder
+              type:
+                (application
+                  name: (identifier)
+                  arguments: (identifier)))
+            (explicit_binder
+              name: (identifier)
+              name: (identifier)
+              type: (identifier)))
+          type:
+            (arrow (identifier) (identifier)))))
 
-=====================================
-Notation declaration
-=====================================
+==============================
+Inductive Type No Constructors
+==============================
 
-notation:10000 n "!" => factorial n
+inductive Foo
 
 ---
 
 (module
-  (notation
-    (number)
-    (application
-      function: (identifier)
-      argument: (string))
-    (application
-      function: (identifier)
-      argument: (identifier))))
+  (inductive
+      name: (identifier)))
+
+==============================
+Inductive Type With Parameters
+==============================
+
+inductive Foo (F : Type) | x (foo : F)
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      (binders
+        (explicit_binder
+          name: (identifier)
+          type: (identifier)))
+      constructors:
+        (constructor
+          name: (identifier)
+          (binders
+            (explicit_binder
+              name: (identifier)
+              type: (identifier))))))
+
+=======================
+Inductive Type One Line
+=======================
+
+inductive Bit | bit0 | bit1
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))
+      constructors:
+        (constructor
+          name: (identifier))))
+
+================================
+Inductive Type Superfluous Where
+================================
+
+inductive Bit where | bit0 | bit1
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))
+      constructors:
+        (constructor
+          name: (identifier))))
+
+========================
+Inductive Type With Type
+========================
+
+inductive Foo : Bar
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      type: (identifier)))
+
+==========================
+Inductive Type Colon Equal
+==========================
+
+inductive Foo :=
+| Bar
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))))
+
+====================
+Class Inductive Type
+====================
+
+class inductive FooBar where
+  | foo : FooBar
+  | bar.baz : FooBar
+  | spam : Nat → FooBar
+  | quux {T: Type} [Add T] (x y : Nat) : Nat → FooBar
+
+---
+
+(module
+  (class_inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier)
+          type: (identifier))
+      constructors:
+        (constructor
+          name: (identifier)
+          type: (identifier))
+      constructors:
+        (constructor
+          name: (identifier)
+          type:
+            (arrow (identifier) (identifier)))
+      constructors:
+        (constructor
+          name: (identifier)
+          (binders
+            (implicit_binder
+              name: (identifier)
+              type: (identifier))
+            (instance_binder
+              type:
+                (application
+                  name: (identifier)
+                  arguments: (identifier)))
+            (explicit_binder
+              name: (identifier)
+              name: (identifier)
+              type: (identifier)))
+          type:
+            (arrow (identifier) (identifier)))))
+
+=================
+Inline Namespaced
+=================
+
+def foo.bar.baz := 12
+
+structure Foo.Bar.Baz where
+  x : Nat
+
+class Foo.Bar.Baz.Quux where
+  x : Nat
+
+instance Spam.Eggs : Foo.Bar.Baz.Quux where
+  x := 3
+
+theorem Foo.Bar.Baz.Quux.Cheese : 2 = 2 := rfl
+
+inductive A.B | C
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      body: (number))
+  (structure
+      name: (identifier)
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier)))
+  (structure
+      name: (identifier)
+      fields:
+        (structure_field
+          name: (identifier)
+          type: (identifier)))
+  (definition
+      name: (identifier)
+      type: (projection term: (identifier) name: (identifier))
+      body:
+        (where_decl
+          (identifier)
+          (number)))
+  (definition
+      name: (identifier)
+      type: (binary_expression (number) (number))
+      body: (identifier))
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))))
+
+===
+Let
+===
+
+def foo :=
+  let foo := 12
+  foo
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      body:
+        (let
+          name: (identifier)
+          value: (number)
+          body: (identifier))))
+
+=============
+Let Annotated
+=============
+
+def foo :=
+  let foo : Nat := 12
+  foo
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      body:
+        (let
+          name: (identifier)
+          type: (identifier)
+          value: (number)
+          body: (identifier))))
+
+============
+Let Function
+============
+
+def foo : Nat :=
+  let val (x y : Nat) := x + y
+  return val 2 3
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      type: (identifier)
+      body:
+        (let
+          name: (identifier)
+          parameters:
+            (parameters
+              (explicit_binder
+                name: (identifier)
+                name: (identifier)
+                type: (identifier)))
+          value: (binary_expression (identifier) (identifier))
+          body:
+            (application
+              name: (identifier)
+              arguments: (identifier)
+              arguments: (number)
+              arguments: (number)))))
+
+============================
+Let Function Bare Parameters
+============================
+
+def foo :=
+let f a b := 2
+f true false
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      body:
+        (let
+          name: (identifier)
+          parameters:
+            (parameters
+              name: (identifier)
+              name: (identifier))
+          value: (number)
+          body:
+            (application
+              name: (identifier)
+              arguments: (true)
+              arguments: (false)))))
+
+==============
+Let Semicolons
+==============
+
+def foo :=
+let foo := 12
+let bar := 13
+let baz := 14
+foo + bar + baz
+
+def bar :=
+let foo := 12;
+let bar := 13;
+let baz := 14;
+foo + bar + baz
+
+def baz :=
+let foo := 12; let bar := 13; let baz := 14;
+foo + bar + baz
+
+def quux :=
+  let foo := 12
+  let bar := 13
+  let baz := 14
+  foo + bar + baz
+
+---
+
+(module
+  (definition (identifier)
+      (let
+        (identifier)
+        (number)
+        (let
+          (identifier)
+          (number)
+          (let
+            (identifier)
+            (number)
+            (binary_expression
+              (binary_expression (identifier) (identifier))
+              (identifier))))))
+  (definition (identifier)
+      (let
+        (identifier)
+        (number)
+        (let
+          (identifier)
+          (number)
+          (let
+            (identifier)
+            (number)
+            (binary_expression
+              (binary_expression (identifier) (identifier))
+              (identifier))))))
+  (definition (identifier)
+      (let
+        (identifier)
+        (number)
+        (let
+          (identifier)
+          (number)
+          (let
+            (identifier)
+            (number)
+            (binary_expression
+              (binary_expression (identifier) (identifier))
+              (identifier))))))
+  (definition (identifier)
+      (let
+        (identifier)
+        (number)
+        (let
+          (identifier)
+          (number)
+          (let
+            (identifier)
+            (number)
+            (binary_expression
+              (binary_expression (identifier) (identifier))
+              (identifier)))))))
+
+==========
+No Let Mut
+==========
+
+def foo :=
+  let mut foo := 12
+  foo
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      body:
+        (let
+          name: (identifier)
+          parameters:
+            (parameters
+              name: (identifier))
+          value: (number)
+          body: (identifier))))
+
+============
+No Let Arrow
+============
+
+def foo :=
+  let foo <- 12
+  foo
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      (ERROR (identifier))
+      body:
+        (application
+          name: (lift_method (number))
+          arguments: (identifier))))
+
+====
+Have
+====
+
+example : Nat:=
+  have : Type := Nat;
+  2
+
+---
+
+(module
+  (example (identifier) (have (identifier) (identifier) (number))))
+
+======
+Abbrev
+======
+
+abbrev Foo := Bar
+
+abbrev Bar : Nat → Nat := f
+
+abbrev Baz {N} [bar N] (h : foo) : Nat → Nat := f
+
+abbrev Baz
+| 2 => 2
+| _ => 3
+
+@[inline] protected abbrev Spam.Quux := Baz
+
+---
+
+(module
+  (definition
+      name: (identifier)
+      body: (identifier))
+  (definition
+      name: (identifier)
+      type: (arrow (identifier) (identifier))
+      body: (identifier))
+  (definition
+      name: (identifier)
+      (binders
+        (implicit_binder
+          name: (identifier))
+          (instance_binder
+            type:
+              (application
+                name: (identifier)
+                arguments: (identifier)))
+          (explicit_binder
+            name: (identifier)
+            type: (identifier)))
+      type: (arrow (identifier) (identifier))
+      body: (identifier))
+  (definition
+      name: (identifier)
+      body:
+        (match_arm
+          lhs: (number)
+          (number))
+      body:
+        (match_arm
+          lhs: (hole)
+          (number)))
+  (declaration
+    (attributes
+      name: (identifier))
+    (abbrev
+      name: (identifier)
+      body: (identifier))))
+
+========
+Constant
+========
+
+constant A : Type
+constant B : Type -> Type
+constant C : Nat := 3
+
+---
+
+(module
+  (constant
+      name: (identifier)
+      type: (identifier))
+  (constant
+      name: (identifier)
+      type: (arrow (identifier) (identifier)))
+  (constant
+      name: (identifier)
+      type: (identifier)
+      (number)))
+
+==========================
+Constant With Missing Type
+==========================
+
+constant B
+
+---
+
+(module (ERROR))
+
+==========================
+Constant With Missing Name
+==========================
+
+constant
+
+---
+
+(module (ERROR))
+
+=============================
+Constant With Non-Simple Body
+=============================
+
+constant Foo : Nat → Nat
+| _ => 3
+
+---
+
+(module
+  (constant (identifier)
+      (application
+        (arrow (identifier) (identifier))
+        (ERROR) (hole) (ERROR) (number))))
+
+=====
+Axiom
+=====
+
+axiom foo : 1 = 2
+
+---
+
+(module
+  (axiom
+      name: (identifier)
+      type: (binary_expression (number) (number))))
+
+=======================
+Axiom With Missing Name
+=======================
+
+axiom : 1 = 2
+
+---
+
+(module
+  (axiom
+      name: (identifier (MISSING _identifier))
+      type: (binary_expression (number) (number))))
+
+========
+Deriving
+========
+
+inductive Foo
+| bar
+deriving Inhabited
+
+class inductive Foo
+| bar
+deriving Inhabited
+
+structure Foo where
+deriving Inhabited
+
+class Foo where
+deriving Inhabited
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))
+      deriving: (identifier))
+  (class_inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))
+      deriving: (identifier))
+  (structure
+      name: (identifier)
+      deriving: (identifier))
+  (structure
+      name: (identifier)
+      deriving: (identifier)))
+
+=================
+Multiple Deriving
+=================
+
+inductive Foo
+| bar
+deriving Baz, Quux
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier))
+      deriving: (identifier)
+      deriving: (identifier)))
+
+================
+Deriving Nothing
+================
+
+inductive Foo
+| bar
+deriving
+
+---
+
+(module
+  (inductive
+      name: (identifier)
+      constructors:
+        (constructor
+          name: (identifier)))
+      (ERROR))

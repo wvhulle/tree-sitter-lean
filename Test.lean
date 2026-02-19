@@ -204,5 +204,4 @@ def GenericDag.buildProof (steps : List ParsedStep) (cursorPos : Lsp.Position)
     blockOutput := initialGoalType,
     blockInput := initialHypotheses,
     metadata := Json.mkObj [] }
-
 end LeanPrism.SemanticTableau

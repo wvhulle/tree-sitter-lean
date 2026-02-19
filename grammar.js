@@ -64,6 +64,7 @@ module.exports = grammar({
   inline: $ => [
     $._atom,
     $._type_spec,
+    $._name,
   ],
 
   conflicts: $ => [],
@@ -104,21 +105,21 @@ module.exports = grammar({
     ),
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
-    namespace: $ => seq('namespace', field('name', $.name)),
+    namespace: $ => seq('namespace', field('name', $._name)),
     
     section: $ => seq('section', optional(field('name', $.identifier))),
     
     // End: `end` or `end Foo` or `end Foo.Bar.Baz`
-    end: $ => seq('end', optional(field('name', $.name))),
+    end: $ => seq('end', optional(field('name', $._name))),
 
     // Open: `open Foo.Bar` or `open Foo Bar Baz` or `open Foo hiding x` or `open Foo (x y)`
     open: $ => seq(
       'open',
       optional('scoped'),
-      repeat1(field('namespace', $.name)),
+      repeat1(field('namespace', $._name)),
       optional(choice(
-        seq('hiding', repeat1(field('hiding', $.name))),
-        seq('(', repeat1(field('only', $.name)), ')'),
+        seq('hiding', repeat1(field('hiding', $._name))),
+        seq('(', repeat1(field('only', $._name)), ')'),
         seq('in', $._expression),
       )),
     ),
@@ -144,11 +145,9 @@ module.exports = grammar({
 
     // `#check`, `#eval`, `#print`, etc.
     hash_command: $ => seq(
-      field('command', $.hash_ident),
+      /#[a-zA-Z_]\w*/,
       repeat($._expression),
     ),
-
-    hash_ident: _ => /#[a-zA-Z_]\w*/,
 
     // `example : 1 + 1 = 2 := by rfl`
     example: $ => seq(
@@ -173,7 +172,7 @@ module.exports = grammar({
     // Supports both `:= body` and pattern-matching `| pat => body` syntax.
     definition: $ => seq(
       field('kind', choice('def', 'theorem', 'lemma', 'abbrev', 'instance')),
-      field('name', $.name),
+      field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       choice(
@@ -226,7 +225,7 @@ module.exports = grammar({
     // Binders
     // ============================================================
 
-    binders: $ => repeat1($._bracketed_binder),
+    binders: $ => repeat1(choice($.identifier, $._bracketed_binder)),
 
     _bracketed_binder: $ => choice(
       $.explicit_binder,
@@ -256,7 +255,7 @@ module.exports = grammar({
       ']',
     ),
 
-    _type_spec: $ => seq(':', $._expression),
+    _type_spec: $ => seq(':', field('type', $._expression)),
 
     // ============================================================
     // Expressions
@@ -305,8 +304,8 @@ module.exports = grammar({
     // Function application: `f x y z`
     // Uses prec.left to parse `f x y` as `(f x) y`
     application: $ => prec.left(PREC.app, seq(
-      field('function', $._expression),
-      field('argument', choice(
+      field('name', $._expression),
+      field('arguments', choice(
         $._atom,
         $.fun,
         $.if,
@@ -327,16 +326,16 @@ module.exports = grammar({
     )),
 
     // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
-    name: $ => seq($.identifier, repeat(seq(token.immediate('.'), $.identifier))),
+    _name: $ => seq($.identifier, repeat(seq(token.immediate('.'), $.identifier))),
 
     // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
     projection: $ => prec.left(PREC.proj, seq(
-      optional(field('object', $._expression)),
+      optional(field('term', $._expression)),
       choice(
         token.immediate('.'),  // For `x.field` where x is an expression
         '.',                   // For `.field` (leading dot)
       ),
-      field('field', choice($.identifier, $.escaped_identifier, $.number)),
+      field('name', choice($.identifier, $.escaped_identifier, $.number)),
     )),
 
     // Arrow type: `A → B`

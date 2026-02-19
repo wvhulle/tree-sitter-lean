@@ -20,9 +20,10 @@ Add this crate as a normal dependency in your `Cargo.toml` file.
 cargo add tree-sitter-lean4
 ```
 
-The binary Lean parser is automatically compiled Cargo if it is missing. If it is missing, you will need these binaries for compilation with Cargo:
+During the first build, you need this:
 
-- `tree-sitter` CLI tool for generating Tree-Sitter parsers
+- C code generator `tree-sitter` (only if the `src/parser.c` is missing)
+- C compiler `cc`
 
 Then instantiate the parser:
 
