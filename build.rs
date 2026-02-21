@@ -1,4 +1,4 @@
-#[deny(clippy::pedantic)]
+#![deny(clippy::pedantic)]
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -27,7 +27,7 @@ fn generate_parser(out_dir: &Path) -> PathBuf {
     let tree_sitter_json = fs::read("tree-sitter.json").expect("read tree-sitter.json");
     fs::write(out_dir.join("tree-sitter.json"), tree_sitter_json).expect("write tree-sitter.json");
     copy_dir(Path::new("grammar"), &out_dir.join("grammar"))
-        .unwrap_or_else(|e| panic!("copy grammar/: {}", e));
+        .unwrap_or_else(|e| panic!("copy grammar/: {e}"));
     copy_dir(Path::new("src"), &out_dir.join("src")).ok();
 
     println!(
