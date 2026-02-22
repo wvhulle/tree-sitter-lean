@@ -513,6 +513,12 @@ module.exports = grammar({
       'have',
       optional(field('name', $.identifier)),
       optional($._type_spec),
+      $._binding_body,
+    )),
+
+    // Shared `:= value [; body]` tail for `let` and `have` — extracted
+    // so the parser reuses states across both forms.
+    _binding_body: $ => prec.right(seq(
       ':=',
       field('value', $._expression),
       optional(seq(
@@ -643,12 +649,7 @@ module.exports = grammar({
       'let',
       field('pattern', $._pattern),
       optional($._type_spec),
-      ':=',
-      field('value', $._expression),
-      optional(seq(
-        choice(';', $._layout_semicolon),
-        field('body', $._expression),
-      )),
+      $._binding_body,
     )),
 
     // If expression: `if cond then t else e`
@@ -657,6 +658,12 @@ module.exports = grammar({
       'if',
       optional(seq(field('hyp', $.identifier), ':')),
       field('condition', $._expression),
+      $._then_else,
+    )),
+
+    // Shared `then expr [else expr]` tail for `if` and `if_let` — extracted
+    // so the parser reuses states across both forms.
+    _then_else: $ => prec.right(seq(
       'then',
       field('then', $._expression),
       optional(seq('else', field('else', $._expression))),
@@ -670,9 +677,7 @@ module.exports = grammar({
       field('pattern', $._pattern),
       choice(':=', '<-', '←'),
       field('value', $._expression),
-      'then',
-      field('then', $._expression),
-      optional(seq('else', field('else', $._expression))),
+      $._then_else,
     )),
 
     // Patterns for let, if-let, and match
