@@ -57,12 +57,7 @@ module.exports = grammar({
   ],
 
   // Inline rules to reduce tree depth
-  inline: $ => [
-    $._atom,
-    $._type_spec,
-    $._name,
-    $._quantifier_binders,
-  ],
+  inline: $ => [],
 
   conflicts: $ => [
     [$.where_decl],
