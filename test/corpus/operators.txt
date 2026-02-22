@@ -203,15 +203,17 @@ Binary Expressions
         (identifier))
       (identifier)))
   (hash_command
-    (binary_expression
+    (application
       (binary_expression
-        (identifier)
         (application
+          (binary_expression
+            (identifier)
+            (identifier))
+          (identifier))
+        (projection
           (identifier)
           (identifier)))
-      (application
-        (identifier)
-        (number))))
+      (number)))
   (hash_command
     (binary_expression
       (identifier)
@@ -459,7 +461,7 @@ def unaryLift : IO Nat := do
       (application
         name: (identifier)
         arguments: (parenthesized
-          (unary_expression
+          (lift_method
             operand: (application
               name: (identifier)
               arguments: (number))))))))

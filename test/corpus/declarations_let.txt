@@ -220,10 +220,10 @@ def foo :=
     name: (identifier)
     (ERROR
       (identifier))
-    body: (application
-      name: (lift_method
-        (number))
-      arguments: (identifier))))
+    body: (lift_method
+      operand: (application
+        name: (number)
+        arguments: (identifier)))))
 
 ====
 Have

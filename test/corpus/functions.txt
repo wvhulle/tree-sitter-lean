@@ -97,8 +97,7 @@ Sugared Anonymous Function
 ==========================
 
 #check (· + 2)
-#check (. + 2)
-#eval twice (. + 2) 10
+#eval twice (· + 2) 10
 
 ---
 
@@ -109,17 +108,13 @@ Sugared Anonymous Function
         (cdot)
         (number))))
   (hash_command
-    (parenthesized
-      (binary_expression
-        (cdot)
-        (number))))
-  (hash_command
     (application
-      (identifier)
-      (parenthesized
-        (binary_expression
-          (cdot)
-          (number)))
+      (application
+        (identifier)
+        (parenthesized
+          (binary_expression
+            (cdot)
+            (number))))
       (number))))
 
 =================

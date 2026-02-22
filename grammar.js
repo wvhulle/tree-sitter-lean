@@ -346,6 +346,8 @@ module.exports = grammar({
       $.subscript,
       $.binary_expression,
       $.unary_expression,
+      $.lift_method,
+      $.borrowed,
       $.explicit,
       // postfix ! and ? are handled by subscript modifier and notation
       $.projection,
@@ -385,6 +387,7 @@ module.exports = grammar({
       $.ellipsis,
       $.sorry,
       $._boolean,
+      $.cdot,
     ),
 
     // Function application: `f x y z`
@@ -437,32 +440,56 @@ module.exports = grammar({
     binary_expression: $ => {
       // 6 levels (reduced from 9) to minimize parser states.
       // Merged: or+$ → low, cons+add+product → add.
-      const table = [
-        [PREC.low, choice('$', '||', '∨')],
+      const leftAssoc = [
+        [PREC.low, choice('||', '∨', '<|>')],
         [PREC.and, choice('&&', '∧')],
         [PREC.compare, choice('==', '!=', '=', '<', '>', '<=', '>=', '≤', '≥', '≠',
                                '∣', '↔', '⊢')],
-        [PREC.add, choice('+', '-', '++', '∪', '∩', '::', '×')],
-        [PREC.mul, choice('*', '/', '%', '∘', '^')],
-        // Pipeline operators above application so `for x in e |>.f do`
-        // reduces the pipeline before `do` is consumed as an argument.
-        [PREC.app + 1, choice('|>', '<|', '|>.')],
+        [PREC.add, choice('+', '-', '++', '∪', '∩', '×')],
+        [PREC.mul, choice('*', '/', '%')],
+        [PREC.app + 1, choice('|>', '|>.')],
       ];
 
-      return choice(...table.map(([precedence, operator]) =>
-        prec.left(precedence, seq(
-          field('left', $._expression),
-          field('operator', operator),
-          field('right', $._expression),
-        )),
-      ));
+      // Right-associative: $, <|, ::, ^, ∘
+      const rightAssoc = [
+        [PREC.low, '$'],
+        [PREC.add, '::'],
+        [PREC.mul, choice('^', '∘')],
+        [PREC.app + 1, '<|'],
+      ];
+
+      return choice(
+        ...leftAssoc.map(([precedence, operator]) =>
+          prec.left(precedence, seq(
+            field('left', $._expression),
+            field('operator', operator),
+            field('right', $._expression),
+          )),
+        ),
+        ...rightAssoc.map(([precedence, operator]) =>
+          prec.right(precedence, seq(
+            field('left', $._expression),
+            field('operator', operator),
+            field('right', $._expression),
+          )),
+        ),
+      );
     },
 
-    // Prefix operators (includes ←/<- for monadic lift in do-blocks)
+    // Prefix operators
     unary_expression: $ => prec(PREC.unary, seq(
-      field('operator', choice('!', '¬', '-', '←', '<-')),
+      field('operator', choice('!', '¬', '-')),
       field('operand', $._expression),
     )),
+
+    // Monadic lift: `← expr` or `<- expr` in do-blocks
+    lift_method: $ => prec(PREC.unary, seq(
+      choice('←', '<-'),
+      field('operand', $._expression),
+    )),
+
+    // Borrowed: `@& expr` — single token so parser distinguishes from `@[` attributes
+    borrowed: $ => seq(token(seq('@', '&')), $._expression),
 
     // Explicit: `@ident` — suppresses implicit arguments
     explicit: $ => seq('@', $._atom),
@@ -1018,8 +1045,11 @@ module.exports = grammar({
 
     char: _ => seq("'", choice(/[^'\\]/, /\\./), "'"),
 
-    // Hole/placeholder: `_` or `·` (cdot, for anonymous functions)
-    hole: _ => choice('_', '·'),
+    // Hole/placeholder: `_`
+    hole: _ => '_',
+
+    // Cdot: `·` (sugared anonymous function placeholder)
+    cdot: _ => '·',
 
     // Synthetic hole: `?foo` or `?_`
     synthetic_hole: _ => /\?[_a-zA-Z]\w*/,
