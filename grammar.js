@@ -69,7 +69,6 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$.where_decl],
-    [$.tactic_config, $.list],
   ],
 
   rules: {
@@ -454,8 +453,11 @@ module.exports = grammar({
         [PREC.add, choice('+', '-', '++', '∪', '∩')],
         [PREC.mul, choice('*', '/', '%', '∘', '^')],
         [PREC.product, '×'],
-        // Pipeline operators
-        [PREC.arrow, choice('|>', '<|', '|>.', '$')],
+        // $ is low-precedence right-apply (like Haskell)
+        [PREC.arrow, '$'],
+        // Pipeline operators above application so `for x in e |>.f do`
+        // reduces the pipeline before `do` is consumed as an argument.
+        [PREC.app + 1, choice('|>', '<|', '|>.')],
       ];
 
       return choice(...table.map(([precedence, operator]) =>
@@ -467,9 +469,9 @@ module.exports = grammar({
       ));
     },
 
-    // Prefix operators
+    // Prefix operators (includes ←/<- for monadic lift in do-blocks)
     unary_expression: $ => prec(PREC.unary, seq(
-      field('operator', choice('!', '¬', '-')),
+      field('operator', choice('!', '¬', '-', '←', '<-')),
       field('operand', $._expression),
     )),
 
@@ -480,15 +482,20 @@ module.exports = grammar({
     // - subscript modifier: `arr[i]!`, `arr[i]?`
     // - notation system: `n !` (user-defined, parsed as application)
 
-    // Lambda: `fun x => e` or `fun (x : T) => e` or `fun (a, b) => e`
+    // Lambda: `fun x => e` or `fun (x : T) => e` or `fun | pat => e | ...`
     // Body gets layout context so `let` bindings work properly
     fun: $ => prec.right(seq(
       choice('fun', 'λ'),
-      field('binders', repeat1(choice($._pattern, $._bracketed_binder))),
-      '=>',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
+      choice(
+        seq(
+          field('binders', repeat1(choice($._pattern, $._bracketed_binder))),
+          '=>',
+          $._layout_start,
+          field('body', $._expression),
+          optional($._layout_end),
+        ),
+        repeat1($.match_arm),
+      ),
     )),
 
     // Universal quantifier: `∀ x, P x`
@@ -568,9 +575,9 @@ module.exports = grammar({
     )),
 
     // Configuration list: `[lemma1, ←lemma2, *]`
-    // Only appears in tactic context — no ambiguity with `list`.
+    // The ← before lemmas is handled by unary_expression.
     tactic_config: $ => prec(1, seq(
-      '[', commaSep(seq(optional('←'), $._expression)), ']',
+      '[', commaSep($._expression), ']',
     )),
 
     // Focus: `· tactic1; tactic2`
@@ -692,6 +699,10 @@ module.exports = grammar({
       ')',
     ),
 
+    // List pattern: `[x]`, `[x, y]` — only in do_let to avoid
+    // GLR conflict with instance_binder in fun binders.
+    list_pattern: $ => seq('[', commaSep1($._pattern), ']'),
+
     // Constructor pattern: `some x`, `none`, `Foo.bar x y`
     // An identifier alone is just an identifier, not a constructor_pattern
     constructor_pattern: $ => prec.left(PREC.app, seq(
@@ -740,26 +751,29 @@ module.exports = grammar({
       $.do_return,
       $.for_in,
       $.do_while,
+      $.do_try,
+      $.do_catch,
       $.do_if,
       $.do_if_let,
       $.do_match,
       $._expression,
     ),
 
-    // Let in do-block: `let x := e` without consuming the body
-    // (the do-sequencing handles the body via _layout_semicolon)
-    do_let: $ => prec(1, seq(
+    // Let in do-block: `let x := e` or `let [x] := e | fallback`
+    do_let: $ => prec.right(2, seq(
       'let',
-      field('pattern', $._pattern),
+      field('pattern', choice($._pattern, $.list_pattern)),
       optional($._type_spec),
       ':=',
       field('value', $._expression),
+      optional(seq('|', field('fallback', $._expression))),
     )),
 
-    // Monadic bind: `let x ← e`
+    // Monadic bind: `let x ← e` or `let (a, b) ← e` or `let x : T ← e`
     let_bind: $ => seq(
       'let',
-      field('name', $.identifier),
+      field('name', $._pattern),
+      optional($._type_spec),
       choice('<-', '←'),
       field('value', $._expression),
     ),
@@ -789,16 +803,24 @@ module.exports = grammar({
     // Return should consume its value expression
     do_return: $ => prec.right(seq('return', optional(field('value', $._expression)))),
 
-    // For loop: `for x in xs do body`
-    // The `do` at the end starts a full do-block with its own layout.
-    for_in: $ => prec.right(1, seq(
+    // For loop: `for x in xs do body` or `for x in xs, y in ys do body`
+    // Uses an explicit for_binding helper to help the parser generator
+    // produce correct state transitions for multi-iterator loops.
+    // Precedence > PREC.app so `do` is the for body, not an app argument.
+    for_in: $ => prec.right(PREC.app + 1, seq(
       'for',
-      optional(seq(field('bound', $.identifier), ':')),
-      field('var', $.identifier),
-      'in',
-      field('iterable', $._expression),
+      $._for_binding,
+      repeat(seq(',', $._for_binding)),
       field('body', $.do),
     )),
+
+    // Precedence on the iterable > PREC.app so `do` reduces the expression
+    // rather than being consumed as an application argument.
+    _for_binding: $ => seq(
+      field('var', choice($._pattern, $.structure_instance)),
+      'in',
+      field('iterable', prec(PREC.app + 1, $._expression)),
+    ),
 
     // If in do-block: branches are do-sequences (can contain reassignment etc.)
     do_if: $ => prec.right(1, seq(
@@ -864,6 +886,24 @@ module.exports = grammar({
       field('body', $.do),
     )),
 
+    // Try in do-blocks: `try body`
+    // Catch is a sibling _do_element because LAYOUT_SEMICOLON fires
+    // between the try body and `catch` at the same indent level.
+    do_try: $ => prec.right(seq(
+      'try',
+      $._layout_start,
+      field('body', $._do_seq),
+      optional($._layout_end),
+    )),
+
+    // Catch handler: `catch e => expr`
+    do_catch: $ => prec.right(seq(
+      'catch',
+      optional(field('var', $.identifier)),
+      '=>',
+      field('handler', $._expression),
+    )),
+
     // ============================================================
     // Delimited Expressions
     // ============================================================
@@ -899,7 +939,10 @@ module.exports = grammar({
     structure_instance: $ => seq(
       '{',
       optional(seq(field('extends', $._expression), 'with')),
-      optional(seq($.field_assignment, repeat(seq(choice(',', /\n/), $.field_assignment)))),
+      optional(seq(
+        choice($.field_assignment, $.ellipsis),
+        repeat(seq(choice(',', /\n/), choice($.field_assignment, $.ellipsis))),
+      )),
       optional($._type_spec),
       '}',
     ),

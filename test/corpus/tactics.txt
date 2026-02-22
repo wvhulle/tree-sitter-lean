@@ -136,7 +136,7 @@ example : 2 = 2 := by simp [foo, bar]
     body: (by
       (tactic_apply
         tactic: (identifier)
-        arg: (list
+        arg: (tactic_config
           (identifier)
           (identifier))))))
 

@@ -48,6 +48,13 @@
             tree-sitter
             rustup
           ];
+
+          # 16 GB virtual memory limit prevents tree-sitter generate from OOMing
+          # the system. GLR conflicts in the grammar can cause exponential state
+          # table growth, consuming 20+ GB and killing the machine.
+          shellHook = ''
+            ulimit -v 16000000
+          '';
         };
       });
 
