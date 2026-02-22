@@ -493,20 +493,17 @@ module.exports = grammar({
     )),
 
     // Universal quantifier: `∀ x, P x`
-    forall: $ => prec.right(seq(
-      choice('forall', '∀'),
-      field('binders', $._quantifier_binders),
-      ',',
-      field('body', $._expression),
-    )),
+    forall: $ => prec.right(seq(choice('forall', '∀'), $._quantifier_tail)),
 
     // Existential quantifier: `∃ x, P x`
-    exists: $ => prec.right(seq(
-      choice('exists', '∃'),
+    exists: $ => prec.right(seq(choice('exists', '∃'), $._quantifier_tail)),
+
+    // Shared `binders, body` for forall and exists.
+    _quantifier_tail: $ => seq(
       field('binders', $._quantifier_binders),
       ',',
       field('body', $._expression),
-    )),
+    ),
 
     // Have expression: `have h : T := proof; body`
     have: $ => prec.right(seq(
@@ -826,6 +823,11 @@ module.exports = grammar({
       'if',
       optional(seq(field('hyp', $.identifier), ':')),
       field('condition', $._expression),
+      $._do_then_else,
+    )),
+
+    // Shared `then do_seq [else do_seq]` for do_if and do_if_let.
+    _do_then_else: $ => prec.right(seq(
       'then',
       $._layout_start,
       field('then', $._do_seq),
@@ -845,16 +847,7 @@ module.exports = grammar({
       field('pattern', $._pattern),
       choice(':=', '<-', '←'),
       field('value', $._expression),
-      'then',
-      $._layout_start,
-      field('then', $._do_seq),
-      optional($._layout_end),
-      optional(seq(
-        'else',
-        $._layout_start,
-        field('else', $._do_seq),
-        optional($._layout_end),
-      )),
+      $._do_then_else,
     )),
 
     // Match in do-block: arms have do-sequences as bodies.
