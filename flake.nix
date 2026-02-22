@@ -47,6 +47,7 @@
           packages = with pkgs; [
             tree-sitter
             rustup
+            nushell
           ];
 
           # 16 GB virtual memory limit prevents tree-sitter generate from OOMing

@@ -285,3 +285,28 @@ example {x : Nat} : x = x := by refine Eq.refl ?_
             (identifier)
             (identifier))
           (synthetic_hole))))))
+
+================================
+Tactic Simp With Config List
+================================
+
+theorem tacticConfig : 0 + 0 = 0 := by
+  simp [Nat.add_zero]
+
+---
+
+(module
+  (definition
+    name: (identifier)
+    type: (binary_expression
+      left: (binary_expression
+        left: (number)
+        right: (number))
+      right: (number))
+    body: (by
+      (tactic_apply
+        tactic: (identifier)
+        arg: (tactic_config
+          (projection
+            term: (identifier)
+            name: (identifier)))))))

@@ -68,45 +68,6 @@ macro "foo" : tactic => `(trivial)
   (macro
     (string)
     (trivial)))
-
-====
-Elab
-====
-
-elab "foo" x:term : term => Lean.Elab.Term.elabTerm x none
-
----
-
-(module
-  (elab
-    (string)
-    (identifier)
-    (identifier)
-    (identifier)
-    (application
-      (identifier)
-      (identifier)
-      (identifier))))
-
-====
-Elab
-====
-
-elab "foo" x:term : term => Lean.Elab.Term.elabTerm x none
-
----
-
-(module
-  (elab
-    (string)
-    (identifier)
-    (identifier)
-    (identifier)
-    (application
-      (identifier)
-      (identifier)
-      (identifier))))
-
 ========================
 Elab Optional Left Arrow
 ========================
