@@ -34,14 +34,14 @@ $ Application
             (number))))))
   (hash_command
     (binary_expression
-      (binary_expression
-        (application
-          (identifier)
-          (identifier))
+      (application
+        (identifier)
         (identifier))
       (binary_expression
-        (number)
-        (number)))))
+        (identifier)
+        (binary_expression
+          (number)
+          (number))))))
 
 =============
 Function Type

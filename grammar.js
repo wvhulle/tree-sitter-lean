@@ -174,9 +174,11 @@ module.exports = grammar({
       $.definition,
       alias($._instance_decl, $.definition),
       $.constant,
+      $.opaque,
       $.axiom,
       $.structure,
       $.inductive,
+      $.class_inductive,
     ),
 
     // `@[simp] def f := 12` — declaration with leading attributes
@@ -244,6 +246,15 @@ module.exports = grammar({
       optional(seq(':=', field('body', $._expression))),
     ),
 
+    // `opaque foo : T := e` — opaque definition
+    opaque: $ => seq(
+      'opaque',
+      field('name', $._name),
+      optional(field('binders', $.binders)),
+      optional($._type_spec),
+      optional(seq(':=', field('body', $._expression))),
+    ),
+
     // `axiom foo : T` — axiomatic declaration
     axiom: $ => seq(
       'axiom',
@@ -263,7 +274,7 @@ module.exports = grammar({
         repeat(seq(field('fields', choice($.structure_field, $._bracketed_binder)), optional($._layout_semicolon))),
         optional($._layout_end),
       )),
-      optional(seq('deriving', commaSep1($.identifier))),
+      optional(seq('deriving', commaSep1(field('deriving', $.identifier)))),
     ),
 
     // Structure fields: `x : T` or `x : T := default` or `x := default`
@@ -283,8 +294,20 @@ module.exports = grammar({
       optional($._type_spec),
       optional(choice(':=', 'where')),
       repeat(field('constructors', $.constructor)),
-      optional(seq('deriving', commaSep1($.identifier))),
+      optional(seq('deriving', commaSep1(field('deriving', $.identifier)))),
     ),
+
+    // `class inductive Foo where | ...` — prec(1) to win over `structure`
+    // when parser sees `class` followed by `inductive`
+    class_inductive: $ => prec(1, seq(
+      'class', 'inductive',
+      field('name', $.identifier),
+      optional(field('binders', $.binders)),
+      optional($._type_spec),
+      optional(choice(':=', 'where')),
+      repeat(field('constructors', $.constructor)),
+      optional(seq('deriving', commaSep1(field('deriving', $.identifier)))),
+    )),
 
     constructor: $ => seq(
       '|',

@@ -455,8 +455,8 @@ deriving Baz, Quux
     name: (identifier)
     constructors: (constructor
       name: (identifier))
-    (identifier)
-    (identifier)))
+    deriving: (identifier)
+    deriving: (identifier)))
 
 ================
 Deriving Nothing

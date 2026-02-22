@@ -341,18 +341,18 @@ example : 4 = 4 % 5 := rfl
   (hash_command
     (binary_expression
       left: (binary_expression
-        left: (binary_expression
+        left: (number)
+        right: (binary_expression
           left: (number)
-          right: (number))
-        right: (number))
+          right: (number)))
       right: (number)))
   (hash_command
     (binary_expression
-      left: (binary_expression
-        left: (unary_expression
-          operand: (float))
-        right: (number))
-      right: (number))))
+      left: (unary_expression
+        operand: (float))
+      right: (binary_expression
+        left: (number)
+        right: (number)))))
 
 ==========
 Comparison

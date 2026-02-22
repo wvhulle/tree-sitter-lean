@@ -337,15 +337,16 @@ class inductive FooBar where
       type: (identifier))
     constructors: (constructor
       name: (identifier)
+      name: (identifier)
       type: (identifier))
     constructors: (constructor
       name: (identifier)
       type: (arrow
-        (identifier)
-        (identifier)))
+        domain: (identifier)
+        codomain: (identifier)))
     constructors: (constructor
       name: (identifier)
-      (binders
+      binders: (binders
         (implicit_binder
           name: (identifier)
           type: (identifier))
@@ -358,8 +359,8 @@ class inductive FooBar where
           name: (identifier)
           type: (identifier)))
       type: (arrow
-        (identifier)
-        (identifier)))))
+        domain: (identifier)
+        codomain: (identifier)))))
 
 =================
 Inline Namespaced
