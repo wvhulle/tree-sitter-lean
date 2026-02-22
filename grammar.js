@@ -930,13 +930,24 @@ module.exports = grammar({
 
     structure_instance: $ => seq(
       '{',
-      optional(seq(field('extends', $._expression), 'with')),
-      optional(seq(
+      optional($._structure_body),
+      '}',
+    ),
+
+    // Extracted to reduce combinatorial explosion from 3 optionals
+    // (extends, fields, type) inside the braces.
+    _structure_body: $ => choice(
+      seq(field('extends', $._expression), 'with',
+        optional(seq(
+          choice($.field_assignment, $.ellipsis),
+          repeat(seq(choice(',', /\n/), choice($.field_assignment, $.ellipsis))),
+        )),
+        optional($._type_spec)),
+      seq(
         choice($.field_assignment, $.ellipsis),
         repeat(seq(choice(',', /\n/), choice($.field_assignment, $.ellipsis))),
-      )),
-      optional($._type_spec),
-      '}',
+        optional($._type_spec)),
+      $._type_spec,
     ),
 
     field_assignment: $ => choice(
@@ -955,13 +966,15 @@ module.exports = grammar({
     list: $ => seq('[', commaSep($._expression), ']'),
 
     // Range syntax: `[:n]`, `[start:end]`, `[start:end:step]`
-    range: $ => seq(
-      '[',
+    range: $ => seq('[', $._range_spec, ']'),
+
+    // Extracted range internals to separate the 3 optional expression
+    // slots from the surrounding brackets.
+    _range_spec: $ => seq(
       optional(field('start', $._expression)),
       ':',
       optional(field('end', $._expression)),
       optional(seq(':', field('step', $._expression))),
-      ']',
     ),
 
     // ============================================================
