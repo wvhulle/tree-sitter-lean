@@ -11,15 +11,12 @@
 // Centralized precedence levels (higher = binds tighter)
 // Based on Lean 4's actual precedence: https://leanprover.github.io/lean4/doc/operators.html
 const PREC = {
-  // Expression precedences
-  arrow: 25,        // → (right assoc)
-  or: 30,           // ||
+  // Expression precedences (6 binary levels + unary/app/proj/atom)
+  low: 25,          // $ || ∨ (merged: or + $)
   and: 35,          // &&
   compare: 40,      // == != < > <= >=
-  cons: 50,         // ::
-  add: 55,          // + - ++
+  add: 55,          // + - ++ :: × (merged: cons + add + product)
   mul: 60,          // * / %
-  product: 65,      // × (type product)
   unary: 70,        // ! ¬ -
   app: 80,          // function application
   proj: 90,         // .field
@@ -212,11 +209,15 @@ module.exports = grammar({
       field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
-      choice(
-        seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
-        seq('where', $._layout_start, repeat1(seq(field('body', $.where_decl), optional($._layout_semicolon))), optional($._layout_end)),
-        repeat1($.match_arm),
-      ),
+      $._declaration_body,
+    ),
+
+    // Shared body production for definition and instance — factored out
+    // to let the parser reuse states across both declaration forms.
+    _declaration_body: $ => choice(
+      seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
+      seq('where', $._layout_start, repeat1(seq(field('body', $.where_decl), optional($._layout_semicolon))), optional($._layout_end)),
+      repeat1($.match_arm),
     ),
 
     // instance — name is optional; aliased to `definition` in the parse tree.
@@ -226,11 +227,7 @@ module.exports = grammar({
       optional(field('name', $.identifier)),
       repeat(field('binders', $._bracketed_binder)),
       optional($._type_spec),
-      choice(
-        seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
-        seq('where', $._layout_start, repeat1(seq(field('body', $.where_decl), optional($._layout_semicolon))), optional($._layout_end)),
-        repeat1($.match_arm),
-      ),
+      $._declaration_body,
     ),
 
     // A single method/field definition inside a `where` block
@@ -403,7 +400,6 @@ module.exports = grammar({
         $._atom,
         $.fun,
         $.if,
-        $.if_let,
         $.match,
         $.do,
         $.by,
@@ -436,7 +432,7 @@ module.exports = grammar({
     )),
 
     // Arrow type: `A → B`
-    arrow: $ => prec.right(PREC.arrow, seq(
+    arrow: $ => prec.right(PREC.low, seq(
       field('domain', $._expression),
       choice('->', '→'),
       field('codomain', $._expression),
@@ -444,17 +440,15 @@ module.exports = grammar({
 
     // Binary operators with table-driven precedence
     binary_expression: $ => {
+      // 6 levels (reduced from 9) to minimize parser states.
+      // Merged: or+$ → low, cons+add+product → add.
       const table = [
-        [PREC.or, choice('||', '∨')],
+        [PREC.low, choice('$', '||', '∨')],
         [PREC.and, choice('&&', '∧')],
         [PREC.compare, choice('==', '!=', '=', '<', '>', '<=', '>=', '≤', '≥', '≠',
-                               '∣', '↔', '⊢')],  // divisibility, iff, turnstile
-        [PREC.cons, '::'],
-        [PREC.add, choice('+', '-', '++', '∪', '∩')],
+                               '∣', '↔', '⊢')],
+        [PREC.add, choice('+', '-', '++', '∪', '∩', '::', '×')],
         [PREC.mul, choice('*', '/', '%', '∘', '^')],
-        [PREC.product, '×'],
-        // $ is low-precedence right-apply (like Haskell)
-        [PREC.arrow, '$'],
         // Pipeline operators above application so `for x in e |>.f do`
         // reduces the pipeline before `do` is consumed as an argument.
         [PREC.app + 1, choice('|>', '<|', '|>.')],
