@@ -61,6 +61,9 @@ module.exports = grammar({
 
   conflicts: $ => [
     [$.where_decl],
+    [$.subtype, $.field_assignment],
+    [$.let, $._pattern],
+    [$.parameters, $._pattern],
   ],
 
   rules: {
@@ -367,6 +370,7 @@ module.exports = grammar({
       $._atom,
       $.application,
       $.subscript,
+      $.subarray,
       $.binary_expression,
       $.unary_expression,
       $.lift_method,
@@ -411,6 +415,8 @@ module.exports = grammar({
       $.sorry,
       $._boolean,
       $.cdot,
+      $.subtype,
+      $.assumption_literal,
     ),
 
     // Function application: `f x y z`
@@ -434,6 +440,16 @@ module.exports = grammar({
       field('index', $._expression),
       ']',
       optional(field('modifier', choice('!', '?'))),
+    )),
+
+    // Subarray slice: `arr[start:stop]`
+    subarray: $ => prec.left(PREC.proj, seq(
+      field('term', $._expression),
+      token.immediate('['),
+      optional(field('start', $._expression)),
+      ':',
+      optional(field('stop', $._expression)),
+      ']',
     )),
 
     // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
@@ -685,14 +701,25 @@ module.exports = grammar({
       $._expression,
     )),
 
-    // Let binding: `let x := e` in do-blocks, or `let x := e; body` in expressions
-    // Body is separated by `;` or layout semicolon (newline at same indent)
-    let: $ => prec.right(seq(
-      'let',
-      field('pattern', $._pattern),
-      optional($._type_spec),
-      $._binding_body,
+    // Let binding: modeled after Lean's letDecl.
+    // Lean tries letIdDecl first (identifier + optional binders), then letPatDecl.
+    // `let x := e; body` — simple bind (identifier, 0 binders)
+    // `let f (params) := e; body` — function (identifier + binders)
+    // `let (a, b) := e; body` — pattern (tuple, hole — not constructor_pattern)
+    let: $ => prec.right(choice(
+      // Identifier form: always wins for bare identifiers.
+      // Subsumes function form (with binders) and simple form (without).
+      seq('let', field('name', $.identifier),
+          optional(field('parameters', $.parameters)),
+          optional($._type_spec), $._binding_body),
+      // Pattern form: tuple destructuring and holes only.
+      // Constructor patterns in `let` require qualified names, parsed differently.
+      seq('let', field('pattern', choice($.tuple_pattern, $.hole)),
+          optional($._type_spec), $._binding_body),
     )),
+
+    // Lean's letIdBinder: binderIdent | bracketedBinder
+    parameters: $ => repeat1(choice($.identifier, $._bracketed_binder)),
 
     // If expression: `if cond then t else e`
     // Also handles `if h : cond then t else e` (dependent if with hypothesis)
@@ -972,6 +999,19 @@ module.exports = grammar({
     ),
 
     anonymous_constructor: $ => seq('⟨', commaSep($._expression), '⟩'),
+
+    // Subtype: `{x // P}` or `{x : T // P}`
+    subtype: $ => seq(
+      '{',
+      field('var', $.identifier),
+      optional($._type_spec),
+      '//',
+      field('property', $._expression),
+      '}',
+    ),
+
+    // French quotes: `‹expr›`
+    assumption_literal: $ => seq('‹', $._expression, '›'),
 
     structure_instance: $ => seq(
       '{',

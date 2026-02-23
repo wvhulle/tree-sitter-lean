@@ -12,7 +12,7 @@ def foo :=
   (definition
     name: (identifier)
     body: (let
-      pattern: (identifier)
+      name: (identifier)
       value: (number)
       body: (identifier))))
 
@@ -30,7 +30,7 @@ def foo :=
   (definition
     name: (identifier)
     body: (let
-      pattern: (identifier)
+      name: (identifier)
       type: (identifier)
       value: (number)
       body: (identifier))))
@@ -57,12 +57,14 @@ def foo : Nat :=
           name: (identifier)
           type: (identifier)))
       value: (binary_expression
-        (identifier)
-        (identifier))
+        left: (identifier)
+        right: (identifier))
       body: (application
-        name: (identifier)
-        arguments: (identifier)
-        arguments: (number)
+        name: (application
+          name: (application
+            name: (identifier)
+            arguments: (identifier))
+          arguments: (number))
         arguments: (number)))))
 
 ============================
@@ -79,11 +81,10 @@ f true false
   (definition
     name: (identifier)
     body: (let
-      pattern: (constructor_pattern
-        constructor: (identifier)
-        arg: (constructor_pattern
-          constructor: (identifier)
-          arg: (identifier)))
+      name: (identifier)
+      parameters: (parameters
+        (identifier)
+        (identifier))
       value: (number)
       body: (application
         name: (application
@@ -199,9 +200,9 @@ def foo :=
   (definition
     name: (identifier)
     body: (let
-      pattern: (constructor_pattern
-        constructor: (identifier)
-        arg: (identifier))
+      name: (identifier)
+      parameters: (parameters
+        (identifier))
       value: (number)
       body: (identifier))))
 
