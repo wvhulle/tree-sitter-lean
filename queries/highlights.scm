@@ -47,6 +47,14 @@
 (structure_field
   name: (identifier) @variable.other.member)
 
+; ── Attributes ──────────────────────────────────────────────────
+
+(attributes
+  "@" @punctuation.special)
+
+(attributes
+  name: (identifier) @attribute)
+
 ; ── Namespaces & imports ─────────────────────────────────────
 
 (namespace
@@ -124,6 +132,11 @@
 (field_assignment
   name: (identifier) @variable.other.member)
 
+; ── Application ─────────────────────────────────────────────
+
+(application
+  name: (identifier) @function.call)
+
 ; ── Tactics ──────────────────────────────────────────────────
 
 (tactic_apply
@@ -149,30 +162,34 @@
 
 (hash_command) @keyword.directive
 
-; ── Types ────────────────────────────────────────────────────
-
-(arrow) @type
-
 ; ── Keywords ─────────────────────────────────────────────────
 
+; Function/definition-introducing keywords
 [
   "def"
   "theorem"
   "lemma"
   "abbrev"
   "instance"
-  "inductive"
+  "example"
+] @keyword.function
+
+; Type/storage-defining keywords
+[
   "structure"
+  "inductive"
   "class"
+  "constant"
+  "axiom"
+  "opaque"
+] @keyword.storage.type
+
+[
   "deriving"
   "section"
   "namespace"
   "end"
-  "example"
   "attribute"
-  "constant"
-  "axiom"
-  "opaque"
   "extends"
 ] @keyword
 
@@ -181,23 +198,34 @@
 [
   "open"
   "import"
-  "variable"
-  "universe"
+  "export"
   "scoped"
   "hiding"
 ] @keyword.control.import
 
 [
+  "variable"
+  "universe"
+  "universes"
+] @keyword.storage
+
+[
   "let"
   "mut"
   "have"
+  "where"
+] @keyword
+
+[
   "fun"
   "λ"
+] @keyword.function
+
+[
   "forall"
   "∀"
   "exists"
   "∃"
-  "where"
 ] @keyword
 
 [
@@ -226,9 +254,29 @@
   "suffices"
 ] @keyword
 
+; Metaprogramming keywords
+[
+  "notation"
+  "macro_rules"
+  "syntax"
+  "macro"
+  "elab"
+  "prefix"
+  "infix"
+  "infixl"
+  "infixr"
+  "postfix"
+] @function.macro
+
 "return" @keyword.control.return
 
-(sorry) @error
+; Exception-like keywords
+[
+  "try"
+  "catch"
+] @keyword.control.exception
+
+(sorry) @keyword.control.exception
 
 ; ── Operators ────────────────────────────────────────────────
 
@@ -249,6 +297,8 @@
   "<-"  "←"
   ":="
   "=>"
+  "↔"  "⊢"
+  "^"
 ] @operator
 
 ; ── Literals ─────────────────────────────────────────────────
@@ -258,6 +308,7 @@
 (string) @string
 (char) @constant.character
 (hole) @variable.builtin
+(synthetic_hole) @variable.builtin
 [(true) (false)] @constant.builtin.boolean
 
 ; ── String internals ─────────────────────────────────────────
@@ -266,14 +317,17 @@
 
 (interpolation
   "{" @punctuation.special
-  (_) @none
   "}" @punctuation.special)
 
 ; ── Comments ─────────────────────────────────────────────────
+
+; Doc comments: `/-- ... -/`
+((comment) @comment.block.documentation
+ (#match? @comment.block.documentation "^/--"))
 
 (comment) @comment
 
 ; ── Punctuation ──────────────────────────────────────────────
 
-["(" ")" "[" "]" "{" "}" "⟨" "⟩"] @punctuation.bracket
-["|" "," "." ":" ";"] @punctuation.delimiter
+["(" ")" "[" "]" "{" "}" "⟨" "⟩" "#["] @punctuation.bracket
+["|" "," "." ":" ";" "//"] @punctuation.delimiter
