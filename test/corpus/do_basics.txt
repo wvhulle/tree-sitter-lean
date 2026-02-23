@@ -68,18 +68,18 @@ def f : Unit := do
 
 (module
   (definition
-    (identifier)
-    (identifier)
-    (do
+    name: (identifier)
+    type: (identifier)
+    body: (do
       (let_bind
-        (identifier)
-        (number))
+        name: (identifier)
+        value: (number))
       (let_bind
-        (identifier)
-        (number))
-      (do_let
-        (identifier)
-        (number)))))
+        name: (identifier)
+        value: (number))
+      (let
+        name: (identifier)
+        value: (number)))))
 
 =============
 Let Annotated
@@ -95,8 +95,8 @@ def f : Unit := do
     name: (identifier)
     type: (identifier)
     body: (do
-      (do_let
-        pattern: (identifier)
+      (let
+        name: (identifier)
         type: (identifier)
         value: (number)))))
 

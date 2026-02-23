@@ -29,6 +29,12 @@
 (inductive
   name: (identifier) @type)
 
+(class_inductive
+  name: (identifier) @type)
+
+(opaque
+  name: (identifier) @function)
+
 (constructor
   name: (identifier) @constructor)
 
@@ -96,13 +102,10 @@
 (for_in
   var: (identifier) @variable.parameter)
 
-(for_in
-  bound: (identifier) @variable.parameter)
-
 ; ── Let / have / mut / bind ──────────────────────────────────
 
 (let
-  pattern: (identifier) @variable)
+  name: (identifier) @variable)
 
 (do_let
   pattern: (identifier) @variable)
@@ -172,6 +175,7 @@
   "attribute"
   "constant"
   "axiom"
+  "opaque"
   "extends"
 ] @keyword
 
@@ -242,6 +246,7 @@
   "="  "=="  "!="  "≠"  "∣"
   "<"  ">"  "<="  ">="  "≤"  "≥"
   "|>"  "<|"  "|>."  "$"
+  "<|>"
   "<;>"  "<;"
   "->"  "→"
   "<-"  "←"
