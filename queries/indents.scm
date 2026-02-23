@@ -21,7 +21,7 @@
   (do)
   (match)
   (fun)
-  (forall)
+  (quantifier)
   (for_in)
   (if)
   (if_let)

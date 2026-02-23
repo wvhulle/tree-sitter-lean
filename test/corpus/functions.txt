@@ -177,9 +177,9 @@ Quantifiers
 
 (module
   (hash_command
-    (forall
+    (quantifier
       binders: (identifier)
-      body: (exists
+      body: (quantifier
         binders: (identifier)
         body: (binary_expression
           left: (binary_expression
@@ -187,12 +187,12 @@ Quantifiers
             right: (identifier))
           right: (identifier)))))
   (hash_command
-    (exists
+    (quantifier
       binders: (explicit_binder
         name: (identifier)
         name: (identifier)
         type: (identifier))
-      body: (forall
+      body: (quantifier
         binders: (identifier)
         body: (binary_expression
           left: (binary_expression

@@ -24,9 +24,9 @@ Subarray
 
 (module
   (hash_command
-    (subarray
-      term: (identifier)
-      start: (number)
+    (subscript
+      object: (identifier)
+      index: (number)
       stop: (application
         name: (identifier)
         arguments: (number)))))
@@ -41,9 +41,9 @@ Subarray No Stop
 
 (module
   (hash_command
-    (subarray
-      term: (identifier)
-      start: (number))))
+    (subscript
+      object: (identifier)
+      index: (number))))
 
 =================
 Subarray No Start
@@ -55,8 +55,8 @@ Subarray No Start
 
 (module
   (hash_command
-    (subarray
-      term: (identifier)
+    (subscript
+      object: (identifier)
       stop: (number))))
 
 ======================
@@ -69,8 +69,8 @@ Subarray of Expression
 
 (module
   (hash_command
-    (subarray
-      term: (parenthesized
+    (subscript
+      object: (parenthesized
         (application
           name: (identifier)
           arguments: (number)))
@@ -86,12 +86,13 @@ Subarray Does Not Have Step
 
 (module
   (hash_command
-    (subarray
-      (identifier)
-      (number)
-      (ERROR
-        (number))
-      (number))))
+    (subscript
+      object: (identifier)
+      index: (number)
+      stop: (application
+        name: (number)
+        (ERROR)
+        arguments: (number)))))
 
 ===========================
 Subarray Does Not Have Copy
@@ -103,10 +104,8 @@ Subarray Does Not Have Copy
 
 (module
   (hash_command
-    (subarray
-      (identifier)
-      (identifier
-        (MISSING _identifier)))))
+    (subscript
+      object: (identifier))))
 
 ==================
 Subarray vs. Range

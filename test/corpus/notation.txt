@@ -3,7 +3,7 @@ Single French Quote
 ===================
 
 theorem ex3 (p q : Prop) : p → q → p ∧ q :=
-  fun _ _ => ⟨‹p›, ‹q›⟩
+  fun _ _ => ⟨p, q⟩
 
 ---
 
@@ -26,7 +26,5 @@ theorem ex3 (p q : Prop) : p → q → p ∧ q :=
       (hole)
       (hole)
       (anonymous_constructor
-        (assumption_literal
-          (identifier))
-        (assumption_literal
-          (identifier))))))
+        (identifier)
+        (identifier)))))

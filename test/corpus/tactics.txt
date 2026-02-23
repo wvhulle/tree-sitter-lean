@@ -152,7 +152,7 @@ example : ∀ x y : Nat, x + y = x + y := by
 
 (module
   (example
-    (forall
+    (quantifier
       (identifier)
       (identifier)
       (identifier)

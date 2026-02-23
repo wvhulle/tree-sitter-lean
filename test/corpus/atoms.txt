@@ -253,19 +253,6 @@ theorem baz : (afweio)» := 12
     name: (escaped_identifier)
     body: (number)))
 
-========
-Borrowed
-========
-
-#check @& String
-
----
-
-(module
-  (hash_command
-    (borrowed
-      (identifier))))
-
 ===========
 Quoted Name
 ===========
@@ -302,8 +289,8 @@ Lift Method
 
 (module
   (hash_command
-    (lift_method
-      (identifier))))
+    (unary_expression
+      operand: (identifier))))
 
 =======
 Subtype

@@ -370,18 +370,14 @@ module.exports = grammar({
       $._atom,
       $.application,
       $.subscript,
-      $.subarray,
       $.binary_expression,
       $.unary_expression,
-      $.lift_method,
-      $.borrowed,
       $.explicit,
       // postfix ! and ? are handled by subscript modifier and notation
       $.projection,
       $.arrow,
       $.fun,
-      $.forall,
-      $.exists,
+      $.quantifier,
       $.let,
       $.have,
       $.if,
@@ -416,7 +412,6 @@ module.exports = grammar({
       $._boolean,
       $.cdot,
       $.subtype,
-      $.assumption_literal,
     ),
 
     // Function application: `f x y z`
@@ -434,22 +429,14 @@ module.exports = grammar({
     )),
 
     // Array/list subscript: `arr[i]` or `arr[i]!` or `arr[i]?`
+    // Also handles subarray slice: `arr[start:stop]`
     subscript: $ => prec.left(PREC.proj, seq(
       field('object', $._expression),
       token.immediate('['),
-      field('index', $._expression),
+      optional(field('index', $._expression)),
+      optional(seq(':', optional(field('stop', $._expression)))),
       ']',
       optional(field('modifier', choice('!', '?'))),
-    )),
-
-    // Subarray slice: `arr[start:stop]`
-    subarray: $ => prec.left(PREC.proj, seq(
-      field('term', $._expression),
-      token.immediate('['),
-      optional(field('start', $._expression)),
-      ':',
-      optional(field('stop', $._expression)),
-      ']',
     )),
 
     // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
@@ -515,20 +502,11 @@ module.exports = grammar({
       );
     },
 
-    // Prefix operators
+    // Prefix operators (includes monadic lift ← for do-blocks)
     unary_expression: $ => prec(PREC.unary, seq(
-      field('operator', choice('!', '¬', '-')),
+      field('operator', choice('!', '¬', '-', '←', '<-')),
       field('operand', $._expression),
     )),
-
-    // Monadic lift: `← expr` or `<- expr` in do-blocks
-    lift_method: $ => prec(PREC.unary, seq(
-      choice('←', '<-'),
-      field('operand', $._expression),
-    )),
-
-    // Borrowed: `@& expr` — single token so parser distinguishes from `@[` attributes
-    borrowed: $ => seq(token(seq('@', '&')), $._expression),
 
     // Explicit: `@ident` — suppresses implicit arguments
     explicit: $ => seq('@', $._atom),
@@ -553,11 +531,11 @@ module.exports = grammar({
       ),
     )),
 
-    // Universal quantifier: `∀ x, P x`
-    forall: $ => prec.right(seq(choice('forall', '∀'), $._quantifier_tail)),
-
-    // Existential quantifier: `∃ x, P x`
-    exists: $ => prec.right(seq(choice('exists', '∃'), $._quantifier_tail)),
+    // Universal/existential quantifier: `∀ x, P x` or `∃ x, P x`
+    quantifier: $ => prec.right(seq(
+      field('quantifier', choice('forall', '∀', 'exists', '∃')),
+      $._quantifier_tail,
+    )),
 
     // Shared `binders, body` for forall and exists.
     _quantifier_tail: $ => seq(
@@ -1009,9 +987,6 @@ module.exports = grammar({
       field('property', $._expression),
       '}',
     ),
-
-    // French quotes: `‹expr›`
-    assumption_literal: $ => seq('‹', $._expression, '›'),
 
     structure_instance: $ => seq(
       '{',

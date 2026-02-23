@@ -13,8 +13,7 @@
   (structure)
   (inductive)
   (fun)
-  (forall)
-  (exists)
+  (quantifier)
   (let)
   (have)
   (do)
@@ -41,10 +40,7 @@
 (fun
   binders: (identifier) @local.definition)
 
-(forall
-  binders: (identifier) @local.definition)
-
-(exists
+(quantifier
   binders: (identifier) @local.definition)
 
 ; Let / have bindings

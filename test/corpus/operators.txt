@@ -461,7 +461,7 @@ def unaryLift : IO Nat := do
       (application
         name: (identifier)
         arguments: (parenthesized
-          (lift_method
+          (unary_expression
             operand: (application
               name: (identifier)
               arguments: (number))))))))

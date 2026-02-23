@@ -93,10 +93,7 @@
 (fun
   binders: (identifier) @variable.parameter)
 
-(forall
-  binders: (identifier) @variable.parameter)
-
-(exists
+(quantifier
   binders: (identifier) @variable.parameter)
 
 (for_in
