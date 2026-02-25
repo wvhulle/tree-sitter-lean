@@ -164,3 +164,44 @@ Match Expression
       (match_arm
         patterns: (hole)
         body: (true)))))
+
+============================
+Match Multi-Line Arm Body
+============================
+
+def f (x : Option Nat) : Nat :=
+  match x with
+  | some n =>
+    let y := n + 1
+    y * 2
+  | none => 0
+
+---
+
+(module
+  (definition
+    name: (identifier)
+    binders: (binders
+      (explicit_binder
+        name: (identifier)
+        type: (application
+          name: (identifier)
+          arguments: (identifier))))
+    type: (identifier)
+    body: (match
+      scrutinees: (identifier)
+      (match_arm
+        patterns: (application
+          name: (identifier)
+          arguments: (identifier))
+        body: (let
+          name: (identifier)
+          value: (binary_expression
+            left: (identifier)
+            right: (number))
+          body: (binary_expression
+            left: (identifier)
+            right: (number))))
+      (match_arm
+        patterns: (identifier)
+        body: (number)))))

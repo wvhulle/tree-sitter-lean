@@ -45,6 +45,7 @@ module.exports = grammar({
     $._layout_start,      // Start a layout block (after `do`, `where`, etc.)
     $._layout_semicolon,  // Virtual semicolon between elements at same indent
     $._layout_end,        // End of layout block (indent decreased)
+    $._match_body_start,  // Like _layout_start but only for match arm bodies
   ],
 
   // Keyword extraction improves error detection and compile time
@@ -764,12 +765,14 @@ module.exports = grammar({
       repeat1($.match_arm),
     )),
 
-    match_arm: $ => seq(
+    match_arm: $ => prec.right(seq(
       '|',
       field('patterns', commaSep1($._expression)),
       '=>',
+      $._match_body_start,
       field('body', $._expression),
-    ),
+      optional($._layout_end),
+    )),
 
     // Do notation with layout-sensitive parsing
     // Elements are separated by newlines at the same indentation level

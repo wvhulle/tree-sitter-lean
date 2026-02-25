@@ -7,6 +7,11 @@
  *   LAYOUT_START     — pushed when grammar enters a layout context
  *   LAYOUT_SEMICOLON — same-indent newline within a layout block
  *   LAYOUT_END       — indent decreased below current layout level
+ *   MATCH_BODY_START — like LAYOUT_START but dedicated to match arm bodies
+ *
+ * MATCH_BODY_START is a separate token so match_arm can open a layout
+ * block without creating grammar conflicts with _do_element.  It pushes
+ * the same indent stack as LAYOUT_START and is closed by LAYOUT_END.
  *
  * Key design: a `queued_indent` field persists across scanner calls so that
  * a single newline can produce multiple LAYOUT_END tokens (one per popped
@@ -25,6 +30,7 @@ enum TokenType {
   LAYOUT_START,
   LAYOUT_SEMICOLON,
   LAYOUT_END,
+  MATCH_BODY_START,
 };
 
 #define MAX_DEPTH 64
@@ -118,6 +124,21 @@ static bool should_suppress_semicolon(TSLexer *lexer) {
   return lexer->lookahead == '|';
 }
 
+/**
+ * Push indent for a layout-start-like token (shared by LAYOUT_START
+ * and MATCH_BODY_START).
+ */
+static void push_layout_indent(Scanner *s, TSLexer *lexer) {
+  skip_spaces(lexer);
+  if (is_nl(lexer->lookahead)) {
+    uint32_t indent = measure_indent(lexer);
+    push(s, indent);
+  } else {
+    push(s, lexer->get_column(lexer));
+  }
+  s->queued_indent = NO_QUEUED;
+}
+
 /* ── main scan ─────────────────────────────────────────────────── */
 
 bool tree_sitter_lean_external_scanner_scan(
@@ -125,7 +146,7 @@ bool tree_sitter_lean_external_scanner_scan(
 
   Scanner *s = (Scanner *)payload;
 
-  /* 0. Error recovery: if all three symbols are valid simultaneously
+  /* 0. Error recovery: if all layout symbols are valid simultaneously
         the parser is in error recovery mode — don't interfere. */
   if (valid_symbols[LAYOUT_START] &&
       valid_symbols[LAYOUT_SEMICOLON] &&
@@ -133,18 +154,22 @@ bool tree_sitter_lean_external_scanner_scan(
     return false;
   }
 
-  /* 1. LAYOUT_START — grammar just saw `do`, `where`, `:=`, `=>`
-        and wants to open a new layout block. */
+  /* 1a. LAYOUT_START — grammar just saw `do`, `where`, `:=`, `=>`
+         and wants to open a new layout block. */
   if (valid_symbols[LAYOUT_START]) {
-    skip_spaces(lexer);
-    if (is_nl(lexer->lookahead)) {
-      uint32_t indent = measure_indent(lexer);
-      push(s, indent);
-    } else {
-      push(s, lexer->get_column(lexer));
-    }
-    s->queued_indent = NO_QUEUED;
+    push_layout_indent(s, lexer);
     lexer->result_symbol = LAYOUT_START;
+    return true;
+  }
+
+  /* 1b. MATCH_BODY_START — grammar just saw `=>` in a match arm.
+         Pushes indent identically to LAYOUT_START, but uses a
+         distinct token so the parser can distinguish match arm
+         context from general layout (avoiding conflicts with
+         _do_element).  Closed by the same LAYOUT_END mechanism. */
+  if (valid_symbols[MATCH_BODY_START]) {
+    push_layout_indent(s, lexer);
+    lexer->result_symbol = MATCH_BODY_START;
     return true;
   }
 
