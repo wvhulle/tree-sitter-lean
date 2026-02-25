@@ -48,6 +48,7 @@ fn main() {
     println!("cargo:rerun-if-changed=grammar.js");
     println!("cargo:rerun-if-changed=tree-sitter.json");
     println!("cargo:rerun-if-changed=src/parser.c");
+    println!("cargo:rerun-if-changed=src/scanner.c");
 
     let src_dir = if Path::new("src/parser.c").exists() {
         PathBuf::from("src")
@@ -56,11 +57,19 @@ fn main() {
         generate_parser(&out_dir)
     };
 
-    cc::Build::new()
+    let mut build = cc::Build::new();
+    build
         .include(&src_dir)
         .flag_if_supported("-Wno-unused-parameter")
         .flag_if_supported("-Wno-unused-but-set-variable")
         .flag_if_supported("-Wno-trigraphs")
-        .file(src_dir.join("parser.c"))
-        .compile("parser");
+        .opt_level(2)
+        .file(src_dir.join("parser.c"));
+
+    let scanner = src_dir.join("scanner.c");
+    if scanner.exists() {
+        build.file(scanner);
+    }
+
+    build.compile("parser");
 }
