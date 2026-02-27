@@ -65,6 +65,11 @@ module.exports = grammar({
     [$.subtype, $.field_assignment],
     [$.let, $._pattern],
     [$.parameters, $._pattern],
+    // Fragment mode conflicts: tactics and expressions overlap when both
+    // are valid top-level alternatives.  GLR resolves at runtime.
+    [$.have, $._pattern],
+    [$._atom, $._name],
+    [$._binding_body, $.tactic_have],
   ],
 
   rules: {
@@ -72,10 +77,28 @@ module.exports = grammar({
     // Module Structure
     // ============================================================
 
-    module: $ => seq(
-      optional($.prelude),
-      repeat($.import),
-      repeat($._command),
+    // The module rule uses `choice` with a low-precedence fragment fallback
+    // so that code snippets (hover popups, docstrings) that contain bare
+    // tactics or expressions still produce proper syntax nodes instead of
+    // ERROR nodes.  Complete modules always win via the higher-precedence
+    // branch because they start with `prelude`, `import`, or a command keyword.
+    module: $ => choice(
+      seq(
+        optional($.prelude),
+        repeat($.import),
+        repeat($._command),
+      ),
+      // Fragment fallback: a sequence of tactics and/or expressions,
+      // as seen in hover popups and docstring code blocks.
+      repeat1($._fragment_element),
+    ),
+
+    // A single top-level element in a code fragment (hover popup, docstring).
+    // Tactics are tried first (higher precedence) so that `intro x`, `simp`,
+    // `rw [...]` etc. produce proper tactic nodes instead of bare applications.
+    _fragment_element: $ => choice(
+      $._tactic,
+      $._expression,
     ),
 
     prelude: _ => 'prelude',

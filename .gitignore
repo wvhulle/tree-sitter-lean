@@ -5,3 +5,4 @@ src/*.json
 result
 .direnv/
 tree-sitter-lean.so
+.pre-commit-config.yaml
