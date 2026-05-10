@@ -144,7 +144,17 @@ module.exports = grammar({
       $.universe,
       $.hash_command,
       $.syntax,
+      $.set_option,
     ),
+
+    // `set_option name value` — option setter (lean4 Command.lean:218).
+    // Use prec.left so the dotted-name parse is preferred over splitting
+    // `name.field value` into name + projection-applied-to-value.
+    set_option: $ => prec.left(seq(
+      'set_option',
+      field('name', $._name),
+      field('value', $._expression),
+    )),
 
     // Modifier keywords consumed transparently (no node created)
     _modifier: _ => choice('noncomputable', 'partial', 'protected', 'private', 'public', 'meta', 'unsafe', 'scoped', 'local'),
@@ -556,11 +566,12 @@ module.exports = grammar({
       optional(field('modifier', choice('!', '?'))),
     )),
 
-    // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references
-    _name: $ => seq(
+    // Qualified name: `foo` or `Foo.Bar.baz` - used for declarations and references.
+    // prec.right so the longest dotted run wins (set_option/import disambiguation).
+    _name: $ => prec.right(seq(
       choice($.identifier, $.escaped_identifier),
       repeat(seq(token.immediate('.'), choice($.identifier, $.escaped_identifier))),
-    ),
+    )),
 
     // Projection: `x.foo` or `x.1` or `x.«name»` or `.field` (leading dot)
     projection: $ => prec.left(PREC.proj, seq(
@@ -1049,7 +1060,7 @@ module.exports = grammar({
       field('body', $.do),
     )),
 
-    // `unless cond do body` — runs body when cond is false. Do-only construct.
+    // `unless cond do body` — runs body when cond is false.
     do_unless: $ => prec.right(1, seq(
       'unless',
       field('condition', $._expression),
