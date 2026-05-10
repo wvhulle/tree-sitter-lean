@@ -76,7 +76,7 @@ module.exports = grammar({
     // for `import` vs a declaration keyword. This mirrors lean4's `atomic`
     // lookahead in `Module.import`.
     [$.import, $._modifier],
-    [$.syntax, $._atom],
+    [$._syntax_atom, $._atom],
     [$.return, $.do_return],
   ],
 
@@ -163,15 +163,29 @@ module.exports = grammar({
     end: $ => seq('end', optional(field('name', $._name))),
 
     // `syntax [(name := X)] [(priority := P)] kind+ : category`
-    // Conservative shape: optional name/priority parens, then a sequence of
-    // string literals or identifiers describing the syntax pattern, then a
-    // colon and target category.
+    // The `kind` body is a sequence of literal strings, identifiers (kind
+    // refs / nonterminals), numbers, and parenthesized groups with optional
+    // `?`/`*`/`+` quantifiers (mirroring Lean's syntax-pattern combinators).
     syntax: $ => seq(
       'syntax',
       optional(seq('(', choice('name', 'priority'), ':=', field('attr', $._expression), ')')),
-      repeat1(field('kind', choice($.string, $.identifier, $.number))),
+      repeat1(field('kind', $._syntax_atom)),
       ':',
       field('category', $.identifier),
+    ),
+
+    _syntax_atom: $ => choice(
+      $.string,
+      $.identifier,
+      $.number,
+      $.syntax_group,
+    ),
+
+    syntax_group: $ => seq(
+      '(',
+      repeat1($._syntax_atom),
+      ')',
+      optional(field('quantifier', choice('?', '*', '+'))),
     ),
 
     // `initialize <name> : <type> ← <expr>` or `initialize <expr>` (also `builtin_initialize`)
