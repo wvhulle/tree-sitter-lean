@@ -381,7 +381,7 @@ module.exports = grammar({
 
     structure: $ => seq(
       choice('structure', 'class'),
-      field('name', $.identifier),
+      field('name', $._name),
       optional(field('binders', $.binders)),
       optional(field('extends', seq('extends', commaSep1($._expression)))),
       optional($._type_spec),
@@ -406,7 +406,7 @@ module.exports = grammar({
 
     inductive: $ => seq(
       'inductive',
-      field('name', $.identifier),
+      field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       optional(choice(':=', 'where')),
@@ -418,7 +418,7 @@ module.exports = grammar({
     // when parser sees `class` followed by `inductive`
     class_inductive: $ => prec(1, seq(
       'class', 'inductive',
-      field('name', $.identifier),
+      field('name', $._name),
       optional(field('binders', $.binders)),
       optional($._type_spec),
       optional(choice(':=', 'where')),
