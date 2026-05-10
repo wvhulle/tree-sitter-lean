@@ -305,10 +305,11 @@ module.exports = grammar({
       field('name', $.identifier),
       repeat(field('binders', choice($.identifier, $._bracketed_binder))),
       optional($._type_spec),
-      ':=',
-      $._layout_start,
-      field('body', $._expression),
-      optional($._layout_end),
+      choice(
+        seq(':=', $._layout_start, field('body', $._expression), optional($._layout_end)),
+        // Match-equation style: `toString | .style => "style" | ...`
+        repeat1($.match_arm),
+      ),
     ),
 
     // `constant foo : T` — opaque constant declaration
