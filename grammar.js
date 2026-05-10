@@ -1195,6 +1195,9 @@ module.exports = grammar({
         /x[0-9a-fA-F]{2}/,
         /u[0-9a-fA-F]{4}/,
         /u\{[0-9a-fA-F]+\}/,
+        // Line continuation: `\` at end-of-line splices the string across
+        // lines (whitespace at the start of the next line is consumed).
+        /\n\s*/,
       ),
     )),
 
