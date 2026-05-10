@@ -77,6 +77,7 @@ module.exports = grammar({
     // lookahead in `Module.import`.
     [$.import, $._modifier],
     [$._syntax_atom, $._atom],
+    [$._atom, $._pattern],
     [$.return, $.do_return],
   ],
 
@@ -502,7 +503,28 @@ module.exports = grammar({
       $.try,
       $.return,
       $.as_pattern,
+      $.show,
+      $.suffices,
     ),
+
+    // `show T from proof` / `show T by tactic` — explicit type ascription with proof.
+    show: $ => prec.right(seq(
+      'show',
+      field('type', $._expression),
+      choice(
+        seq('from', field('proof', $._expression)),
+        seq('by', field('proof', $._expression)),
+      ),
+    )),
+
+    // `suffices T from proof` (the `h : T` named form is omitted to avoid
+    // a conflict with `_pattern`'s identifier).
+    suffices: $ => prec.right(seq(
+      'suffices',
+      field('type', $._expression),
+      choice('from', 'by'),
+      field('proof', $._expression),
+    )),
 
     // `try BODY catch x => HANDLER` — term-mode try/catch.
     // Body and handler are layout-bounded do-seqs so multi-statement bodies
@@ -952,6 +974,7 @@ module.exports = grammar({
       $.do_while,
       $.do_unless,
       $.do_dbg_trace,
+      $.do_assert,
       $.do_break,
       $.do_continue,
       $.do_if,
@@ -1096,6 +1119,13 @@ module.exports = grammar({
 
     // `dbg_trace expr` — debug trace (lean4 Do.lean).
     do_dbg_trace: $ => prec.right(seq('dbg_trace', field('value', $._expression))),
+
+    // `assert! cond` / `debug_assert! cond`. The `!` is part of the keyword
+    // token (whole-word), not the postfix operator on identifier `assert`.
+    do_assert: $ => prec.right(seq(
+      choice(token('assert!'), token('debug_assert!')),
+      field('cond', $._expression),
+    )),
 
     // `break` / `continue` — loop-control bare keywords.
     do_break: _ => 'break',
