@@ -297,7 +297,8 @@ abbrev Baz
       body: (number)))
   (declaration
     attributes: (attributes
-      name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (definition
       name: (identifier)
       name: (identifier)

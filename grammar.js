@@ -285,15 +285,19 @@ module.exports = grammar({
       $._declaration,
     ),
 
-    // `@[simp, inline]` or `@[extern "foo"]`
+    // `@[simp, inline]`, `@[extern "foo"]`, `@[command_elab assertCheckCmd]`,
+    // `@[default_instance prio]`, etc. Each comma-separated entry is a name
+    // followed by an optional sequence of atomic arguments (idents/strings/
+    // numbers).
     attributes: $ => seq(
       '@', '[',
-      repeat1(choice(
-        seq('extern', field('extern', $.string)),
-        field('name', $._name),
-        ',',
-      )),
+      commaSep1($.attribute_entry),
       ']',
+    ),
+
+    attribute_entry: $ => seq(
+      field('name', $._name),
+      repeat(field('arg', choice($.identifier, $.escaped_identifier, $.string, $.number))),
     ),
 
     // def/theorem/lemma/abbrev — name is required, no ambiguity with binders.

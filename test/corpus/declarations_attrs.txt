@@ -15,20 +15,23 @@ Attributes
 (module
   (declaration
     attributes: (attributes
-      name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (definition
       name: (identifier)
       body: (number)))
   (declaration
     attributes: (attributes
-      name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (definition
       type: (identifier)
       body: (anonymous_constructor
         (number))))
   (declaration
     attributes: (attributes
-      name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (definition
       name: (identifier)
       type: (binary_expression
@@ -37,7 +40,8 @@ Attributes
       body: (identifier)))
   (declaration
     attributes: (attributes
-      name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (constant
       name: (identifier)
       type: (identifier))))
@@ -53,8 +57,10 @@ Multiple Attributes
 (module
   (declaration
     attributes: (attributes
-      name: (identifier)
-      name: (identifier))
+      (attribute_entry
+        name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (definition
       name: (identifier)
       body: (number))))
@@ -106,7 +112,9 @@ Extern Attribute
 (module
   (declaration
     attributes: (attributes
-      extern: (string))
+      (attribute_entry
+        name: (identifier)
+        arg: (string)))
     (definition
       name: (identifier)
       body: (number))))
@@ -173,7 +181,8 @@ Partial With Attribute
 (module
   (declaration
     attributes: (attributes
-      name: (identifier))
+      (attribute_entry
+        name: (identifier)))
     (definition
       name: (identifier)
       body: (number))))
