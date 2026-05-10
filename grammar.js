@@ -129,11 +129,11 @@ module.exports = grammar({
     // ============================================================
 
     _command: $ => choice(
-      // Declarations, notations, and examples with optional leading modifiers
-      seq(repeat($._modifier), choice(
-        $._declaration, $.declaration, $.example,
-        $.notation, $.attribute, $.initialize,
-      )),
+      // Decorated declarations: doc comment + attributes + modifiers + decl.
+      // Wrapped in a single visible node so Helix's syntax-tree expand
+      // selection (alt+o) can grow from inside the body to the full
+      // declaration including its preamble.
+      $.decorated_declaration,
       // Other commands (no modifiers)
       $.namespace,
       $.section,
@@ -284,11 +284,20 @@ module.exports = grammar({
       $.class_inductive,
     ),
 
-    // `@[simp] def f := 12` — declaration with leading attributes
-    declaration: $ => seq(
-      field('attributes', $.attributes),
-      repeat($._modifier),
-      $._declaration,
+    // Doc comment + attributes + modifiers + declaration, all wrapped in one
+    // visible node so the Helix syntax-tree expand selection grows from the
+    // body's expression up to the full declaration with its preamble.
+    decorated_declaration: $ => seq(
+      optional(field('doc', $.doc_comment)),
+      optional(field('attributes', $.attributes)),
+      repeat(field('modifier', $._modifier)),
+      field('declaration', choice(
+        $._declaration,
+        $.example,
+        $.notation,
+        $.attribute,
+        $.initialize,
+      )),
     ),
 
     // `@[simp, inline]`, `@[extern "foo"]`, `@[command_elab assertCheckCmd]`,
@@ -1292,6 +1301,12 @@ module.exports = grammar({
     // ============================================================
     // Comments
     // ============================================================
+
+    // `/-- ... -/` doc comment. NOT in `extras` so it is grammatically
+    // attached to the declaration that follows (via `decorated_declaration`).
+    // Higher token precedence than `comment` so the lexer prefers this when
+    // both could match (the `/-` prefix overlaps).
+    doc_comment: _ => token(prec(1, seq('/--', /[^-]*(-+[^-/][^-]*)*-*/, '-/'))),
 
     comment: _ => token(choice(
       seq('--', /.*/),

@@ -39,7 +39,7 @@
 
   ; Declarations
   (definition)
-  (declaration)
+  (decorated_declaration)
   (structure)
   (inductive)
   (class_inductive)

@@ -4,7 +4,12 @@
 ; `maa` (around argument), `mac` (around comment), etc.
 
 ; ── Functions / theorems ─────────────────────────────────────────────────────
-; `definition` covers def / theorem / lemma / abbrev / instance
+; `definition` covers def / theorem / lemma / abbrev / instance.
+; The `decorated_declaration` wrapper additionally includes any leading
+; doc comment, attributes, and modifiers so `maf` selects the whole thing.
+
+(decorated_declaration
+  declaration: (_) @function.inside) @function.around
 
 (definition body: (_) @function.inside) @function.around
 

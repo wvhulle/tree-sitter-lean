@@ -5,7 +5,7 @@
 
 (definition) @context
 
-(declaration) @context
+(decorated_declaration) @context
 
 (structure) @context
 

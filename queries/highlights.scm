@@ -390,9 +390,8 @@
 
 ; ── Comments ─────────────────────────────────────────────────
 
-; Doc comments: `/-- ... -/`
-((comment) @comment.block.documentation
- (#match? @comment.block.documentation "^/--"))
+; Doc comments are now their own grammar node (attached to declarations).
+(doc_comment) @comment.block.documentation
 
 (comment) @comment
 
