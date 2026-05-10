@@ -872,6 +872,7 @@ module.exports = grammar({
       $.hole,
       $.tuple_pattern,
       $.constructor_pattern,
+      $.syntax_quotation,
     ),
 
     // Tuple pattern: `(a, b)` or `(a, b, c)`
