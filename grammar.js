@@ -79,6 +79,9 @@ module.exports = grammar({
     [$.import, $._modifier],
     [$._syntax_atom, $._atom],
     [$._atom, $._pattern],
+    [$.inductive],
+    [$.structure],
+    [$.class_inductive],
     [$.return, $.do_return],
   ],
 
@@ -398,6 +401,7 @@ module.exports = grammar({
 
     // Structure fields: `x : T` or `x : T := default` or `x := default`
     structure_field: $ => seq(
+      optional(field('doc', $.doc_comment)),
       field('name', $.identifier),
       repeat($._bracketed_binder),
       choice(
@@ -429,6 +433,7 @@ module.exports = grammar({
     )),
 
     constructor: $ => seq(
+      optional(field('doc', $.doc_comment)),
       '|',
       field('name', $._name),
       optional(field('binders', $.binders)),
