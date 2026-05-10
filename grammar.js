@@ -573,7 +573,7 @@ module.exports = grammar({
         [PREC.and, choice('&&', '∧')],
         [PREC.compare, choice('==', '!=', '=', '<', '>', '<=', '>=', '≤', '≥', '≠',
                                '∣', '↔', '⊢')],
-        [PREC.add, choice('+', '-', '++', '∪', '∩', '×')],
+        [PREC.add, choice('+', '-', '++', '∪', '∩', '×', '\\')],
         [PREC.mul, choice('*', '/', '%')],
         [PREC.app + 1, choice('|>', '|>.')],
       ];
