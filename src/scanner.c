@@ -85,6 +85,11 @@ static inline uint32_t top_indent(Scanner *s) {
   return s->depth > 0 ? s->indents[s->depth - 1] : 0;
 }
 
+/* The layout column just below the top — what we'd see after one pop. */
+static inline uint32_t penultimate_indent(Scanner *s) {
+  return s->depth > 1 ? s->indents[s->depth - 2] : 0;
+}
+
 static inline void push(Scanner *s, uint32_t indent) {
   if (s->depth < MAX_DEPTH) {
     s->indents[s->depth++] = indent;
@@ -187,6 +192,24 @@ bool tree_sitter_lean_external_scanner_scan(
     uint32_t ci = top_indent(s);
 
     if (qi < ci && valid_symbols[LAYOUT_END]) {
+      // Top-level match arms below the body's indent (`def f := match X with
+      // | ...`): when `:=` is the only layout open and the next token is `|`,
+      // the arms belong to the match. Closing the layout would terminate the
+      // match prematurely. Deeper stacks pop normally so nested matches still
+      // work — there an inner match needs LAYOUT_END to fire so the outer
+      // match's arm at a lower column can fire.
+      if (s->depth == 1) {
+        lexer->mark_end(lexer);
+        skip_spaces(lexer);
+        while (is_nl(lexer->lookahead)) {
+          lexer->advance(lexer, true);
+          skip_spaces(lexer);
+        }
+        if (starts_with_pipe(lexer)) {
+          s->queued_indent = NO_QUEUED;
+          return false;
+        }
+      }
       pop(s);
       lexer->result_symbol = LAYOUT_END;
       return true;
@@ -221,6 +244,10 @@ bool tree_sitter_lean_external_scanner_scan(
     uint32_t ci   = top_indent(s);
 
     if (next < ci && valid_symbols[LAYOUT_END]) {
+      // Mirror of the depth==1 / `|` guard in step 2.
+      if (s->depth == 1 && starts_with_pipe(lexer)) {
+        return false;
+      }
       pop(s);
       s->queued_indent = next;
       lexer->result_symbol = LAYOUT_END;
