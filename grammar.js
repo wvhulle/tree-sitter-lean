@@ -145,6 +145,8 @@ module.exports = grammar({
       $.hash_command,
       $.syntax,
       $.set_option,
+      $.include,
+      $.omit,
     ),
 
     // `set_option name value` — option setter (lean4 Command.lean:218).
@@ -232,6 +234,10 @@ module.exports = grammar({
     variable: $ => seq('variable', repeat1($._bracketed_binder)),
 
     universe: $ => seq(choice('universe', 'universes'), repeat1($.identifier)),
+
+    // `include foo bar` / `omit foo bar` — section-scoped variable inclusion.
+    include: $ => seq('include', repeat1(field('name', $.identifier))),
+    omit: $ => seq('omit', repeat1(field('name', $.identifier))),
 
     // `attribute [simp] Nat.add_zero`
     attribute: $ => prec.left(seq(
@@ -935,6 +941,9 @@ module.exports = grammar({
       $.for_in,
       $.do_while,
       $.do_unless,
+      $.do_dbg_trace,
+      $.do_break,
+      $.do_continue,
       $.do_if,
       $.do_if_let,
       $.do_match,
@@ -1057,19 +1066,30 @@ module.exports = grammar({
       optional($._layout_end),
     )),
 
-    // While loop in do-block: `while cond do body`
+    // While loop in do-block: `while cond do body`. The condition's `do`
+    // greediness when followed by a binary expression `x == y do` is a known
+    // limitation; mirrors lean4's `withForbidden "do"` need but tree-sitter
+    // can't enforce that without a full `_term_before_do` clone (state-cost
+    // prohibitive). Workaround: simple conditions parse fine.
     do_while: $ => prec.right(1, seq(
       'while',
       field('condition', $._expression),
       field('body', $.do),
     )),
 
-    // `unless cond do body` — runs body when cond is false.
+    // `unless cond do body` — same caveat as `do_while`.
     do_unless: $ => prec.right(1, seq(
       'unless',
       field('condition', $._expression),
       field('body', $.do),
     )),
+
+    // `dbg_trace expr` — debug trace (lean4 Do.lean).
+    do_dbg_trace: $ => prec.right(seq('dbg_trace', field('value', $._expression))),
+
+    // `break` / `continue` — loop-control bare keywords.
+    do_break: _ => 'break',
+    do_continue: _ => 'continue',
 
     // Try in do-blocks: `try body`
     // Catch is a sibling _do_element because LAYOUT_SEMICOLON fires
