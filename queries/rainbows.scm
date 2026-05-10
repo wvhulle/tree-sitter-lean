@@ -5,6 +5,7 @@
   (parenthesized)
   (tuple)
   (explicit_binder)
+  (syntax_quotation)
 
   ; { }
   (structure_instance)
@@ -16,6 +17,7 @@
   (tactic_config)
   (instance_binder)
   (subscript)
+  (attributes)
 
   ; ⟨ ⟩
   (anonymous_constructor)

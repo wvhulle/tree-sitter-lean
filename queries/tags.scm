@@ -40,3 +40,14 @@
 
 (section
   name: (identifier) @name) @definition.module
+
+; ── Initialize / set_option / syntax declarations ───────────────────────────
+
+(initialize
+  name: (identifier) @name) @definition.constant
+
+(set_option
+  name: (identifier) @name) @definition.constant
+
+(syntax
+  attr: (identifier) @name) @definition.macro

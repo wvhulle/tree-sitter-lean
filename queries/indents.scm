@@ -15,6 +15,7 @@
   (array)
   (list)
   (tactic_config)
+  (syntax_quotation)
 
   ; Block-forming expressions
   (by)
@@ -27,12 +28,28 @@
   (if_let)
   (let)
   (have)
+  (try)
+
+  ; Do-block elements
+  (do_unless)
+  (do_while)
+  (do_match)
+  (do_if)
+  (do_if_let)
 
   ; Declarations
   (definition)
+  (declaration)
   (structure)
   (inductive)
+  (class_inductive)
   (constant)
+  (axiom)
+  (opaque)
+  (initialize)
+  (syntax)
+  (notation)
+  (attribute)
   (namespace)
   (section)
   (where_decl)

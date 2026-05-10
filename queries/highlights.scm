@@ -52,8 +52,11 @@
 (attributes
   "@" @punctuation.special)
 
-(attributes
+(attribute_entry
   name: (identifier) @attribute)
+
+(attribute_entry
+  arg: (identifier) @attribute)
 
 ; ── Namespaces & imports ─────────────────────────────────────
 
@@ -204,6 +207,8 @@
   "hiding"
   "meta"
   "all"
+  "include"
+  "omit"
 ] @keyword.control.import
 
 [
@@ -214,6 +219,9 @@
   "variable"
   "universe"
   "universes"
+  "set_option"
+  "initialize"
+  "builtin_initialize"
 ] @keyword.storage
 
 [
@@ -246,7 +254,11 @@
   "in"
   "while"
   "do"
+  "unless"
 ] @keyword.control.repeat
+
+(do_break) @keyword.control.repeat
+(do_continue) @keyword.control.repeat
 
 [
   "match"
@@ -277,11 +289,61 @@
 
 "return" @keyword.control.return
 
+; Debug
+[
+  "dbg_trace"
+] @function.builtin
+
 ; Exception-like keywords
 [
   "try"
   "catch"
 ] @keyword.control.exception
+
+; ── Interpolated strings ─────────────────────────────────────
+
+(interpolated_string
+  prefix: _ @string.special)
+
+(interpolated_string
+  (string) @string)
+
+; ── Set-option / pragmas ─────────────────────────────────────
+
+(set_option
+  name: (identifier) @variable.builtin)
+
+; ── As-patterns ──────────────────────────────────────────────
+
+(as_pattern
+  binder: (identifier) @variable
+  "@" @operator)
+
+; ── Initialize ───────────────────────────────────────────────
+
+(initialize
+  name: (identifier) @variable)
+
+; ── Include / Omit ───────────────────────────────────────────
+
+(include
+  name: (identifier) @variable)
+
+(omit
+  name: (identifier) @variable)
+
+; ── Syntax declarations & quotations ─────────────────────────
+
+(syntax
+  attr: (identifier) @function.macro)
+
+(syntax
+  category: (identifier) @type)
+
+(syntax_quotation
+  "`" @punctuation.special
+  "(" @punctuation.special
+  ")" @punctuation.special)
 
 (sorry) @keyword.control.exception
 

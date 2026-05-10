@@ -16,6 +16,16 @@
 ; Where declarations
 (where_decl body: (_) @function.inside) @function.around
 
+; Initialize blocks (run at module load — function-like)
+(initialize value: (_) @function.inside) @function.around
+
+; Try/catch — handler bodies are function-like for textobject purposes
+(try
+  body: (_) @function.inside) @function.around
+
+(try
+  handler: (_) @function.inside) @function.around
+
 ; ── Types (structures / inductives) ──────────────────────────────────────────
 
 (structure
@@ -60,3 +70,37 @@
 (tactic_focus) @entry.around
 
 (tactic_case) @entry.around
+
+; Do-block elements as entries — supports `]m`/`[m` movement between statements
+(do_let) @entry.around
+
+(let_bind) @entry.around
+
+(let_mut) @entry.around
+
+(do_return) @entry.around
+
+(do_dbg_trace) @entry.around
+
+(do_unless
+  body: (_) @entry.inside) @entry.around
+
+(do_while
+  body: (_) @entry.inside) @entry.around
+
+(do_if
+  then: (_) @entry.inside) @entry.around
+
+(do_if_let
+  then: (_) @entry.inside) @entry.around
+
+(do_match_arm
+  body: (_) @entry.inside) @entry.around
+
+; Field assignments inside structure instances
+(field_assignment) @entry.around
+
+; Imports (textobject for line-level navigation)
+(import) @entry.around
+
+(set_option) @entry.around

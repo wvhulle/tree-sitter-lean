@@ -5,9 +5,15 @@
 
 (definition) @context
 
+(declaration) @context
+
 (structure) @context
 
 (inductive) @context
+
+(class_inductive) @context
+
+(initialize) @context
 
 (namespace) @context
 

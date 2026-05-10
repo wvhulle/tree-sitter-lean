@@ -10,8 +10,10 @@
 
 [
   (definition)
+  (declaration)
   (structure)
   (inductive)
+  (class_inductive)
   (fun)
   (quantifier)
   (let)
@@ -22,6 +24,13 @@
   (for_in)
   (example)
   (where_decl)
+  (initialize)
+  (try)
+  (do_unless)
+  (do_while)
+  (do_match)
+  (do_if)
+  (do_if_let)
 ] @local.scope
 
 ; ── Definitions ────────────────────────────────────────────────────────────────
@@ -72,6 +81,18 @@
   pattern: (identifier) @local.definition)
 
 (tactic_have
+  name: (identifier) @local.definition)
+
+; As-pattern binders inside match arms
+(as_pattern
+  binder: (identifier) @local.definition)
+
+; Try-catch handler binder
+(try
+  var: (identifier) @local.definition)
+
+; Initialize binding
+(initialize
   name: (identifier) @local.definition)
 
 ; ── References ─────────────────────────────────────────────────────────────────
