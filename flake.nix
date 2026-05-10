@@ -48,6 +48,7 @@
             tree-sitter
             rustup
             nushell
+            nodejs
           ];
 
           # 16 GB virtual memory limit prevents tree-sitter generate from OOMing

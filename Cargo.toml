@@ -1,13 +1,13 @@
 [package]
-name = "tree-sitter-lean4"
-version = "0.2.2"
-edition = "2021"
 authors = ["Willem Vanhulle <willemvanhulle@protonmail.com>"]
-description = "Tree-sitter grammar for Lean 4 (generates parser at build time)"
-repository = "https://github.com/wvhulle/tree-sitter-lean"
-license = "MIT"
-keywords = ["tree-sitter", "parser", "lean", "lean4"]
 categories = ["parsing", "text-editors"]
+description = "Tree-sitter grammar for Lean 4 (generates parser at build time)"
+edition = "2021"
+keywords = ["tree-sitter", "parser", "lean", "lean4"]
+license = "MIT"
+name = "tree-sitter-lean4"
+repository = "https://github.com/wvhulle/tree-sitter-lean"
+version = "0.3.0"
 
 build = "build.rs"
 include = ["build.rs", "src/*", "grammar.js", "grammar/*", "tree-sitter.json"]
