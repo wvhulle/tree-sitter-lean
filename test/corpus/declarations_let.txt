@@ -59,13 +59,12 @@ def foo : Nat :=
       value: (binary_expression
         left: (identifier)
         right: (identifier))
-      body: (application
-        name: (application
+      body: (return
+        value: (application
           name: (application
             name: (identifier)
-            arguments: (identifier))
-          arguments: (number))
-        arguments: (number)))))
+            arguments: (number))
+          arguments: (number))))))
 
 ============================
 Let Function Bare Parameters

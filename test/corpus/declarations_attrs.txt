@@ -415,4 +415,3 @@ inductive A.B | C
     name: (identifier)
     constructors: (constructor
       name: (identifier))))
-

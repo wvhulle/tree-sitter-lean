@@ -70,6 +70,13 @@ module.exports = grammar({
     [$.have, $._pattern],
     [$._atom, $._name],
     [$._binding_body, $.tactic_have],
+    // `public`/`meta` can prefix either an `import` (only in the module header)
+    // or a declaration via `_modifier`. GLR resolves at runtime by lookahead
+    // for `import` vs a declaration keyword. This mirrors lean4's `atomic`
+    // lookahead in `Module.import`.
+    [$.import, $._modifier],
+    [$.syntax, $._atom],
+    [$.return, $.do_return],
   ],
 
   rules: {
@@ -84,6 +91,7 @@ module.exports = grammar({
     // branch because they start with `prelude`, `import`, or a command keyword.
     module: $ => choice(
       seq(
+        optional($.module_header),
         optional($.prelude),
         repeat($.import),
         repeat($._command),
@@ -92,6 +100,8 @@ module.exports = grammar({
       // as seen in hover popups and docstring code blocks.
       repeat1($._fragment_element),
     ),
+
+    module_header: _ => 'module',
 
     // A single top-level element in a code fragment (hover popup, docstring).
     // Tactics are tried first (higher precedence) so that `intro x`, `simp`,
@@ -105,7 +115,13 @@ module.exports = grammar({
 
     // Import: `import Lean.Data.Json`
     // Module path is parsed as identifier or projection chain
-    import: $ => seq('import', field('module', $._expression)),
+    import: $ => seq(
+      optional(field('visibility', 'public')),
+      optional(field('meta', 'meta')),
+      'import',
+      optional(field('all', 'all')),
+      field('module', $._name),
+    ),
 
     // ============================================================
     // Commands
@@ -115,7 +131,7 @@ module.exports = grammar({
       // Declarations, notations, and examples with optional leading modifiers
       seq(repeat($._modifier), choice(
         $._declaration, $.declaration, $.example,
-        $.notation, $.attribute,
+        $.notation, $.attribute, $.initialize,
       )),
       // Other commands (no modifiers)
       $.namespace,
@@ -126,19 +142,48 @@ module.exports = grammar({
       $.variable,
       $.universe,
       $.hash_command,
+      $.syntax,
     ),
 
     // Modifier keywords consumed transparently (no node created)
-    _modifier: _ => choice('noncomputable', 'partial', 'protected', 'private', 'unsafe', 'scoped', 'local'),
+    _modifier: _ => choice('noncomputable', 'partial', 'protected', 'private', 'public', 'meta', 'unsafe', 'scoped', 'local'),
 
 
     // Namespace: `namespace Foo` or `namespace Foo.Bar.Baz`
     namespace: $ => seq('namespace', field('name', $._name)),
 
-    section: $ => seq('section', optional(field('name', $._name))),
+    section: $ => seq(
+      optional(field('visibility', 'public')),
+      'section',
+      optional(field('name', $._name)),
+    ),
 
     // End: `end` or `end Foo` or `end Foo.Bar.Baz`
     end: $ => seq('end', optional(field('name', $._name))),
+
+    // `syntax [(name := X)] [(priority := P)] kind+ : category`
+    // Conservative shape: optional name/priority parens, then a sequence of
+    // string literals or identifiers describing the syntax pattern, then a
+    // colon and target category.
+    syntax: $ => seq(
+      'syntax',
+      optional(seq('(', choice('name', 'priority'), ':=', field('attr', $._expression), ')')),
+      repeat1(field('kind', choice($.string, $.identifier, $.number))),
+      ':',
+      field('category', $.identifier),
+    ),
+
+    // `initialize <name> : <type> ← <expr>` or `initialize <expr>` (also `builtin_initialize`)
+    initialize: $ => seq(
+      choice('initialize', 'builtin_initialize'),
+      optional(seq(
+        field('name', $.identifier),
+        ':',
+        field('type', $._expression),
+        '←',
+      )),
+      field('value', $._expression),
+    ),
 
     // Open: `open Foo.Bar` or `open Foo Bar Baz` or `open Foo hiding x` or `open Foo (x y)`
     open: $ => seq(
@@ -409,6 +454,36 @@ module.exports = grammar({
       $.match,
       $.do,
       $.by,
+      $.try,
+      $.return,
+      $.as_pattern,
+    ),
+
+    // `try BODY catch x => HANDLER` — term-mode try/catch.
+    // Body and handler are layout-bounded do-seqs so multi-statement bodies
+    // (e.g. `let pat := e | fallback; pure x`) work even when `try` appears
+    // in term position. Replaces the previous separate `do_try`/`do_catch`.
+    try: $ => prec.right(seq(
+      'try',
+      $._layout_start,
+      field('body', $._do_seq),
+      optional($._layout_end),
+      'catch',
+      optional(field('var', choice($.identifier, $.hole))),
+      '=>',
+      $._layout_start,
+      field('handler', $._do_seq),
+      optional($._layout_end),
+    )),
+
+    // `return [expr]` — term-mode return.
+    return: $ => prec.right(seq('return', optional(field('value', $._expression)))),
+
+    // As-pattern: `name@pattern` (no space). Mirrors lean4's match-pattern bind.
+    as_pattern: $ => seq(
+      field('binder', $.identifier),
+      token.immediate('@'),
+      field('pattern', $._atom),
     ),
 
     // Atoms: self-delimiting expressions that can appear as function arguments
@@ -418,6 +493,7 @@ module.exports = grammar({
       $.number,
       $.float,
       $.string,
+      $.interpolated_string,
       $.char,
       $.parenthesized,
       $.named_argument,
@@ -491,7 +567,7 @@ module.exports = grammar({
       // 6 levels (reduced from 9) to minimize parser states.
       // Merged: or+$ → low, cons+add+product → add.
       const leftAssoc = [
-        [PREC.low, choice('||', '∨', '<|>')],
+        [PREC.low, choice('||', '∨', '<|>', '<$>', '<*>', '*>', '<*')],
         [PREC.and, choice('&&', '∧')],
         [PREC.compare, choice('==', '!=', '=', '<', '>', '<=', '>=', '≤', '≥', '≠',
                                '∣', '↔', '⊢')],
@@ -780,8 +856,11 @@ module.exports = grammar({
       repeat1(field('arg', $._pattern)),
     )),
 
-    // Match expression (prec.left to consume as many arms as possible)
-    match: $ => prec.left(seq(
+    // Match expression. Uses `prec.right` so a nested match greedily consumes
+    // its own arms before control returns to an outer match. Without this,
+    // the outer match wins arm-attachment ambiguities and steals the inner
+    // match's later arms.
+    match: $ => prec.right(seq(
       'match',
       field('scrutinees', commaSep1($._expression)),
       'with',
@@ -823,8 +902,6 @@ module.exports = grammar({
       $.do_return,
       $.for_in,
       $.do_while,
-      $.do_try,
-      $.do_catch,
       $.do_if,
       $.do_if_let,
       $.do_match,
@@ -1091,6 +1168,11 @@ module.exports = grammar({
         $.interpolation,
       )),
       '"',
+    ),
+
+    interpolated_string: $ => seq(
+      field('prefix', choice('s!', 'r!', 'm!')),
+      $.string,
     ),
 
     _string_content: _ => token.immediate(prec(1, /[^"\\{]+/)),

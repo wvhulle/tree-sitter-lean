@@ -1,4 +1,3 @@
-
 ================
 Do In Definition
 ================
@@ -100,11 +99,10 @@ def tryCatch1 : IO Unit := do
       name: (identifier)
       arguments: (identifier))
     body: (do
-      (do_try
+      (try
         body: (application
           name: (identifier)
-          arguments: (parenthesized)))
-      (do_catch
+          arguments: (parenthesized))
         var: (identifier)
         handler: (application
           name: (identifier)
@@ -129,12 +127,11 @@ def tryCatch2 : IO Unit := do
       name: (identifier)
       arguments: (identifier))
     body: (do
-      (do_try
+      (try
         body: (application
           name: (identifier)
-          arguments: (parenthesized)))
-      (do_catch
-        var: (identifier)
+          arguments: (parenthesized))
+        var: (hole)
         handler: (application
           name: (identifier)
           arguments: (parenthesized))))))
@@ -166,9 +163,8 @@ def letListFallback (xs : List Nat) : IO Unit := do
         pattern: (list_pattern
           (identifier))
         value: (identifier)
-        fallback: (application
-          name: (identifier)
-          arguments: (parenthesized)))
+        fallback: (return
+          value: (parenthesized)))
       (application
         name: (identifier)
         arguments: (parenthesized)))))
@@ -199,7 +195,7 @@ def letBindTuple : IO Unit := do
           arguments: (tuple
             (number)
             (number))))
-      (do_return
+      (return
         value: (parenthesized)))))
 
 ====================================
@@ -225,7 +221,7 @@ def letBindTyped : IO Unit := do
         value: (application
           name: (identifier)
           arguments: (number)))
-      (do_return
+      (return
         value: (parenthesized)))))
 
 ==========================

@@ -194,6 +194,7 @@
 ] @keyword
 
 (prelude) @keyword
+(module_header) @keyword
 
 [
   "open"
@@ -201,7 +202,13 @@
   "export"
   "scoped"
   "hiding"
+  "meta"
+  "all"
 ] @keyword.control.import
+
+[
+  "public"
+] @keyword.storage.modifier
 
 [
   "variable"

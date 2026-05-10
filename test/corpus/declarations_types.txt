@@ -299,9 +299,8 @@ instance : ToString Foo where
         codomain: (identifier))
       body: (fun
         binders: (identifier)
-        body: (application
-          name: (identifier)
-          arguments: (string))))))
+        body: (interpolated_string
+          (string))))))
 
 ==================================
 Instance Field Without Return Type
@@ -498,4 +497,3 @@ noncomputable constant FooBar : Nat
   (constant
     (identifier)
     (identifier)))
-

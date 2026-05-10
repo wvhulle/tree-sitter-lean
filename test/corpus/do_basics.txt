@@ -201,7 +201,7 @@ def f : Nat := do
     (identifier)
     (identifier)
     (do
-      (do_return
+      (return
         (number)))))
 
 ===============
@@ -236,7 +236,7 @@ def f : Unit := do
     (identifier)
     (identifier)
     (do
-      (do_return))))
+      (return))))
 
 ======
 Unless

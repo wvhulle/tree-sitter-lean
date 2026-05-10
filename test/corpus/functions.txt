@@ -83,13 +83,17 @@ Anonymous Function Match With Additional Argument
 (module
   (hash_command
     (application
-      name: (identifier)
-      arguments: (number)
-      arguments: (fun
-        lhs: (number)
-        (number)
-        lhs: (identifier)
-        (number))
+      name: (application
+        name: (application
+          name: (identifier)
+          arguments: (number))
+        arguments: (fun
+          (match_arm
+            patterns: (number)
+            body: (number))
+          (match_arm
+            patterns: (identifier)
+            body: (number))))
       arguments: (number))))
 
 ==========================

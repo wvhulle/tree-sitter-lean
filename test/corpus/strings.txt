@@ -124,12 +124,11 @@ Interpolation
 (module
   (hash_command
     (application
-      (application
-        (identifier)
-        (identifier))
-      (string
-        (interpolation
-          (identifier))))))
+      (identifier)
+      (interpolated_string
+        (string
+          (interpolation
+            (identifier)))))))
 
 =======================================
 Interpolation With Function Application
@@ -142,14 +141,13 @@ Interpolation With Function Application
 (module
   (hash_command
     (application
-      (application
-        (identifier)
-        (identifier))
-      (string
-        (interpolation
-          (application
-            (identifier)
-            (number)))))))
+      (identifier)
+      (interpolated_string
+        (string
+          (interpolation
+            (application
+              (identifier)
+              (number))))))))
 
 ===================================
 Interpolation With Escape Sequences
@@ -161,8 +159,7 @@ Interpolation With Escape Sequences
 
 (module
   (hash_command
-    (application
-      (identifier)
+    (interpolated_string
       (string
         (escape_sequence)
         (escape_sequence)

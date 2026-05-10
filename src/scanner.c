@@ -116,12 +116,18 @@ static uint32_t measure_indent(TSLexer *lexer) {
 }
 
 /**
- * Check if we should suppress LAYOUT_SEMICOLON.
  * In Lean 4, match arms are delimited by `|` without semicolons.
- * The `|` token at the start of a line should not trigger a semicolon.
+ * A `|` at the start of a line should also not trigger LAYOUT_END,
+ * because match arms may appear at a column lower than the enclosing
+ * binding's layout (e.g. `def f := match x with | ...` puts arms
+ * below the `match` column).
  */
-static bool should_suppress_semicolon(TSLexer *lexer) {
+static bool starts_with_pipe(TSLexer *lexer) {
   return lexer->lookahead == '|';
+}
+
+static bool should_suppress_semicolon(TSLexer *lexer) {
+  return starts_with_pipe(lexer);
 }
 
 /**

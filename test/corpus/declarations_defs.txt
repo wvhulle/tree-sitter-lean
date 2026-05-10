@@ -258,13 +258,15 @@ def foo : Nat -> Bool :=
   (definition
     name: (identifier)
     type: (arrow
-      (identifier)
-      (identifier))
+      domain: (identifier)
+      codomain: (identifier))
     body: (fun
-      lhs: (number)
-      (true)
-      lhs: (hole)
-      (false))))
+      (match_arm
+        patterns: (number)
+        body: (true))
+      (match_arm
+        patterns: (hole)
+        body: (false)))))
 
 =======================
 Multimatch Syntax Sugar
@@ -449,4 +451,3 @@ theorem foo := sorry
   (definition
     (identifier)
     (sorry)))
-

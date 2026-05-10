@@ -145,11 +145,9 @@ import Foo.Bar.Baz
 
 (module
   (import
-    module: (projection
-      term: (projection
-        term: (identifier)
-        name: (identifier))
-      name: (identifier))))
+    module: (identifier)
+    module: (identifier)
+    module: (identifier)))
 
 ========================
 Import With Missing Name
