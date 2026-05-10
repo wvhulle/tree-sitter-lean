@@ -42,10 +42,11 @@ module.exports = grammar({
 
   // External scanner for layout-sensitive constructs (indentation-based parsing)
   externals: $ => [
-    $._layout_start,      // Start a layout block (after `do`, `where`, etc.)
-    $._layout_semicolon,  // Virtual semicolon between elements at same indent
-    $._layout_end,        // End of layout block (indent decreased)
-    $._match_body_start,  // Like _layout_start but only for match arm bodies
+    $._layout_start,            // Start a layout block (after `do`, `where`, etc.)
+    $._layout_semicolon,        // Virtual semicolon between elements at same indent
+    $._layout_end,              // End of layout block (indent decreased)
+    $._match_body_start,        // Like _layout_start but only for match arm bodies
+    $._syntax_quotation_body,   // Inner content of `` `( ... ) `` (balanced)
   ],
 
   // Keyword extraction improves error detection and compile time
@@ -507,6 +508,7 @@ module.exports = grammar({
       $.synthetic_hole,
       $.quoted_name,
       $.double_quoted_name,
+      $.syntax_quotation,
       $.ellipsis,
       $.sorry,
       $._boolean,
@@ -1203,6 +1205,18 @@ module.exports = grammar({
     // Quoted name: `` `name `` or ``` ``name ```
     quoted_name: $ => seq('`', $.identifier),
     double_quoted_name: $ => seq('``', $.identifier),
+
+    // Syntax quotation: `` `(category| pattern) `` or `` `(pattern) `` —
+    // Lean 4's syntax-pattern matching used in macros and `match` over
+    // `Syntax`. The body is consumed by the external scanner as opaque text
+    // up to the matching `)`, so we don't need to model the inner syntax
+    // category grammar here.
+    syntax_quotation: $ => seq(
+      '`',
+      token.immediate('('),
+      optional($._syntax_quotation_body),
+      ')',
+    ),
 
     // Ellipsis argument: `..`
     ellipsis: _ => '..',

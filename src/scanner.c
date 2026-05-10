@@ -31,6 +31,7 @@ enum TokenType {
   LAYOUT_SEMICOLON,
   LAYOUT_END,
   MATCH_BODY_START,
+  SYNTAX_QUOTATION_BODY,  // content inside `` `( ... ) `` up to matching `)`
 };
 
 #define MAX_DEPTH 64
@@ -162,6 +163,37 @@ bool tree_sitter_lean_external_scanner_scan(
   if (valid_symbols[LAYOUT_START] &&
       valid_symbols[LAYOUT_SEMICOLON] &&
       valid_symbols[LAYOUT_END]) {
+    return false;
+  }
+
+  /* 1z. SYNTAX_QUOTATION_BODY — the parser has just consumed `` `( `` and
+         expects the body of a syntax quotation. Greedily read until the
+         matching `)`, tracking nested parens, brackets, and braces.
+         Stops just before the closing `)` so the grammar can consume it. */
+  if (valid_symbols[SYNTAX_QUOTATION_BODY]) {
+    int paren_depth = 0;
+    int bracket_depth = 0;
+    int brace_depth = 0;
+    bool consumed_any = false;
+    while (!lexer->eof(lexer)) {
+      int32_t c = lexer->lookahead;
+      if (c == ')' && paren_depth == 0 && bracket_depth == 0 && brace_depth == 0) {
+        break;
+      }
+      if (c == '(') paren_depth++;
+      else if (c == ')') { if (paren_depth > 0) paren_depth--; }
+      else if (c == '[') bracket_depth++;
+      else if (c == ']') { if (bracket_depth > 0) bracket_depth--; }
+      else if (c == '{') brace_depth++;
+      else if (c == '}') { if (brace_depth > 0) brace_depth--; }
+      lexer->advance(lexer, false);
+      consumed_any = true;
+    }
+    if (consumed_any) {
+      lexer->mark_end(lexer);
+      lexer->result_symbol = SYNTAX_QUOTATION_BODY;
+      return true;
+    }
     return false;
   }
 
