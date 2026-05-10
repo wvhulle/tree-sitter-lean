@@ -32,6 +32,7 @@ enum TokenType {
   LAYOUT_END,
   MATCH_BODY_START,
   SYNTAX_QUOTATION_BODY,  // content inside `` `( ... ) `` up to matching `)`
+  BRACE_FIELD_SEP,        // newline-as-separator inside `{ … }` struct instance
 };
 
 #define MAX_DEPTH 64
@@ -164,6 +165,27 @@ bool tree_sitter_lean_external_scanner_scan(
       valid_symbols[LAYOUT_SEMICOLON] &&
       valid_symbols[LAYOUT_END]) {
     return false;
+  }
+
+  /* 1y. BRACE_FIELD_SEP — inside `{ … }`, a newline acts as a field
+         separator. Emit only when the parser asks for it (between two
+         field assignments). The structure-instance rule places this in the
+         separator position so a missing comma is acceptable when newlines
+         intervene. */
+  if (valid_symbols[BRACE_FIELD_SEP]) {
+    skip_spaces(lexer);
+    if (is_nl(lexer->lookahead)) {
+      lexer->mark_end(lexer);
+      while (is_nl(lexer->lookahead)) {
+        lexer->advance(lexer, true);
+        skip_spaces(lexer);
+      }
+      // Don't consume up to `}` — let the parser see it as end-of-body.
+      if (lexer->lookahead != '}' && !lexer->eof(lexer)) {
+        lexer->result_symbol = BRACE_FIELD_SEP;
+        return true;
+      }
+    }
   }
 
   /* 1z. SYNTAX_QUOTATION_BODY — the parser has just consumed `` `( `` and

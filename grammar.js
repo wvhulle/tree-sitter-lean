@@ -47,6 +47,7 @@ module.exports = grammar({
     $._layout_end,              // End of layout block (indent decreased)
     $._match_body_start,        // Like _layout_start but only for match arm bodies
     $._syntax_quotation_body,   // Inner content of `` `( ... ) `` (balanced)
+    $._brace_field_sep,         // Newline as field separator inside `{ … }`
   ],
 
   // Keyword extraction improves error detection and compile time
@@ -1203,12 +1204,12 @@ module.exports = grammar({
       seq(field('extends', $._expression), 'with',
         optional(seq(
           choice($.field_assignment, $.ellipsis),
-          repeat(seq(choice(',', /\n/), choice($.field_assignment, $.ellipsis))),
+          repeat(seq(choice(',', $._brace_field_sep), choice($.field_assignment, $.ellipsis))),
         )),
         optional($._type_spec)),
       seq(
         choice($.field_assignment, $.ellipsis),
-        repeat(seq(choice(',', /\n/), choice($.field_assignment, $.ellipsis))),
+        repeat(seq(choice(',', $._brace_field_sep), choice($.field_assignment, $.ellipsis))),
         optional($._type_spec)),
       $._type_spec,
     ),
