@@ -255,14 +255,15 @@ def f : Lean.Elab.Command.CommandElabM Lean.Syntax :=
 (module
   (definition
     (identifier)
-    (application
-      (identifier)
+    (projection
+      (application
+        (projection
+          (projection
+            (projection
+              (identifier)
+              (identifier))
+            (identifier))
+          (identifier))
+        (identifier))
       (identifier))
-    (quoted
-      (namespace
-        (identifier)
-        (declaration
-          (definition
-            (identifier)
-            (number)))
-        (identifier)))))
+    (syntax_quotation)))

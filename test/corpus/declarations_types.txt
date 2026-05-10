@@ -338,9 +338,9 @@ instance : ToString Foo where
       arguments: (identifier))
     body: (where_decl
       name: (identifier)
-      body: (match_arm
-        lhs: (hole)
-        (string)))))
+      (match_arm
+        patterns: (hole)
+        body: (string)))))
 
 =======
 Example

@@ -905,6 +905,7 @@ module.exports = grammar({
       $.do_return,
       $.for_in,
       $.do_while,
+      $.do_unless,
       $.do_if,
       $.do_if_let,
       $.do_match,
@@ -1030,6 +1031,13 @@ module.exports = grammar({
     // While loop in do-block: `while cond do body`
     do_while: $ => prec.right(1, seq(
       'while',
+      field('condition', $._expression),
+      field('body', $.do),
+    )),
+
+    // `unless cond do body` — runs body when cond is false. Do-only construct.
+    do_unless: $ => prec.right(1, seq(
+      'unless',
       field('condition', $._expression),
       field('body', $.do),
     )),

@@ -255,11 +255,9 @@ def check : IO Unit := do
       name: (identifier)
       arguments: (identifier))
     body: (do
-      (application
-        name: (application
-          name: (identifier)
-          arguments: (true))
-        arguments: (do
+      (do_unless
+        condition: (true)
+        body: (do
           (application
             name: (identifier)
             arguments: (string)))))))
